@@ -1,0 +1,53 @@
+*.py[co]
+*.DS_*
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+
+# Translations
+*.mo
+
+# Developer
+.venv
+venv
+*.pyc
+build
+
+# IDE
+.vscode
+
+# Environment variables
+.env
+
+# Data
+*.csv
+*.sqlite
+*.ldb
+*.ldb-log
+*.ldb-shm
+data/*
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+# Gmail API
+**/credentials.json
+**/token.pickle
