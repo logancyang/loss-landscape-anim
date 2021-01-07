@@ -10,6 +10,7 @@ numpy = "^1.19.4"
 torch = "^1.7.1"
 matplotlib = "^3.3.3"
 fastcore = "^1.3.16"
+pytorch-lightning = "^1.1.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

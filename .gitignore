@@ -51,3 +51,8 @@ data/*
 # Gmail API
 **/credentials.json
 **/token.pickle
+
+# Model
+*.pt
+*.pth
+lightning_logs
