@@ -7,9 +7,7 @@ from matplotlib.animation import FuncAnimation
 def plot_multiclass_decision_boundary(model, X, y, ax=None):
     x_min, x_max = X[:, 0].min() - 0.1, X[:, 0].max() + 0.1
     y_min, y_max = X[:, 1].min() - 0.1, X[:, 1].max() + 0.1
-    xx, yy = np.meshgrid(
-        np.linspace(x_min, x_max, 101), np.linspace(y_min, y_max, 101)
-    )
+    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 101), np.linspace(y_min, y_max, 101))
 
     X_test = torch.from_numpy(np.c_[xx.ravel(), yy.ravel()]).float()
     y_pred = model(X_test, apply_softmax=True)
@@ -31,7 +29,7 @@ def animate_decision_area(
     model, X_train, y_train, steps, giffps, write2gif=False, file="nn_decision"
 ):
     # (W, loss, acc) in steps
-    print(f'frames: {len(steps)}')
+    print(f"frames: {len(steps)}")
     weight_steps = [step[0] for step in steps]
     loss_steps = [step[1] for step in steps]
     acc_steps = [step[2] for step in steps]
@@ -72,29 +70,23 @@ def animate_decision_area(
         ax.set_xlabel("x1")
         ax.set_ylabel("x2")
         step_text = ax.text(
-            0.05, 0.9, '', fontsize=10,
-            ha='left', va='center', transform=ax.transAxes
+            0.05, 0.9, "", fontsize=10, ha="left", va="center", transform=ax.transAxes
         )
         value_text = ax.text(
-            0.05, 0.8, '', fontsize=10,
-            ha='left', va='center', transform=ax.transAxes
+            0.05, 0.8, "", fontsize=10, ha="left", va="center", transform=ax.transAxes
         )
         step_text.set_text(f"epoch: {i}")
-        value_text.set_text(
-            f"loss: {loss_steps[i]: .2f}\nacc: {acc_steps[i]: .2f}"
-        )
+        value_text.set_text(f"loss: {loss_steps[i]: .2f}\nacc: {acc_steps[i]: .2f}")
 
     # call the animator.  blit=True means only
     # re-draw the parts that have changed.
     # NOTE this anim must be global to work
     global anim
-    anim = FuncAnimation(
-        fig, animate, frames=len(steps), interval=200, blit=False
-    )
+    anim = FuncAnimation(fig, animate, frames=len(steps), interval=200, blit=False)
     plt.ioff()
 
     # Write to gif
     if write2gif:
-        anim.save(f"./{file}.gif", writer='imagemagick', fps=giffps)
+        anim.save(f"./{file}.gif", writer="imagemagick", fps=giffps)
 
     plt.show()
