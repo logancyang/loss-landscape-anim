@@ -53,6 +53,5 @@ data/*
 **/token.pickle
 
 # Model
-*.pt
-*.pth
+models/
 lightning_logs

@@ -11,8 +11,10 @@ Steps:
        aesthetics.
 """
 import pytorch_lightning as pl
+import numpy as np
 import torch
 import torch.nn.functional as F
+from sklearn.decomposition import PCA
 from torch import nn
 from torch.optim import SGD, Adam
 
@@ -158,3 +160,45 @@ class MLP(GenericModel):
     def training_epoch_end(self, training_step_outputs):
         """Only record optimization path on epoch level"""
         self.optim_path.extend(training_step_outputs)
+
+
+class DimReduction:
+    def __init__(self, model_params, seed):
+        self.input_matrix = self._transform(model_params)
+        self.seed = seed
+
+    def dim_reduce(self):
+        pca = PCA(n_components=2, random_state=self.seed)
+        optim_path = self.input_matrix.T
+        pca.fit(optim_path)
+        path_2d = pca.transform(optim_path)
+        reduced_dirs = pca.components_
+        return {
+            'optim_path': optim_path,
+            'path_2d': path_2d,
+            'reduced_dirs': reduced_dirs
+        }
+
+    def build_grid(self, res=100, alpha=0.05):
+        """
+        Produce the grid for the contour plot. Start from the optimal point,
+        span directions of the pca result with stepsize alpha, resolution res.
+        """
+        reduced_dict = self.dim_reduce()
+        optim_pt = reduced_dict['optim_path_ws'][-1]
+        dir0, dir1 = reduced_dict['reduced_dirs']
+        grid = []
+        for i in range(-res, res):
+            row = []
+            for j in range(-res, res):
+                w_new = optim_pt + i * alpha * dir0 + j * alpha * dir1
+                row.append(w_new)
+            grid.append(row)
+        assert (grid[res][res] == reduced_dict['optim_path_ws']).all()
+        return grid
+
+    def _transform(self, model_params):
+        npvectors = []
+        for tensor in model_params:
+            npvectors.append(np.array(tensor))
+        return np.vstack(npvectors).T
