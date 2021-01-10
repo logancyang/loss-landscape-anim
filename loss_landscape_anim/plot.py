@@ -119,7 +119,7 @@ def animate_contour(
     figsize=(9, 6),
     filename="test.gif",
 ):
-    print(f"Total frames to process: {len(param_steps)}")
+    print(f"\nTotal frames to process: {len(param_steps)}")
 
     fig, ax = plt.subplots(figsize=figsize)
     coords_x, coords_y = coords
@@ -162,12 +162,16 @@ def animate_contour(
         blit=False,
     )
     plt.ioff()
+    print(f"Writing {filename}.")
     anim.save(
         f"./{filename}",
         writer="imagemagick",
         fps=giffps,
         progress_callback=lambda i, n: print(
-            "\r" + f"Processing frame {i+1}/{n}", end=""
+            "\r"
+            + f"Processing frame {i+1}/{n}... Once processing is done, the conversion "
+            "will take a while...",
+            end="",
         ),
     )
-    print(f"\n{filename} created.")
+    print(f"\n{filename} created successfully.")
