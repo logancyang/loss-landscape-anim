@@ -1,12 +1,12 @@
 import pickle
 
-import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
 
 from loss_landscape_anim.model import MLP, LossGrid
+from loss_landscape_anim.plot import animate_contour
 
 
 """CLI Arguments"""
@@ -58,8 +58,8 @@ if not LOAD_MODEL:
 
 model = torch.load("./models/model.pt")
 
-optim_path, loss_path = zip(
-    *[(path["flat_w"], path["loss"]) for path in model.optim_path]
+optim_path, loss_path, accu_path = zip(
+    *[(path["flat_w"], path["loss"], path["accuracy"]) for path in model.optim_path]
 )
 
 print(f"Total points in optim_path: {len(optim_path)}")
@@ -74,20 +74,13 @@ loss_grid = LossGrid(
 )
 
 loss_log_2d = loss_grid.loss_values_log_2d
-coords_x, coords_y = loss_grid.coords
-pcvariances = loss_grid.pcvariances
-
-xc = list(range(0, 200))
-yc = list(range(0, 200))
 steps = loss_grid.path_2d.tolist()
 
-fig, ax = plt.subplots(figsize=(6, 4))
-cp = ax.contourf(coords_x, coords_y, loss_log_2d, levels=35, alpha=0.9, cmap="YlGnBu")
-w1s = [step[0] for step in steps]
-w2s = [step[1] for step in steps]
-(pathline,) = ax.plot(w1s, w2s, color="r", lw=1)
-
-ax.set_title("MLP")
-ax.set_xlabel(f"principal component 0, {pcvariances[0]:.1%}")
-ax.set_ylabel(f"principal component 1, {pcvariances[1]:.1%}")
-plt.savefig("test.png")
+animate_contour(
+    param_steps=steps,
+    loss_steps=loss_path,
+    acc_steps=accu_path,
+    loss_grid=loss_log_2d,
+    coords=loss_grid.coords,
+    pcvariances=loss_grid.pcvariances,
+)

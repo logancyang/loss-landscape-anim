@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 
-def plot_multiclass_decision_boundary(model, X, y, ax=None):
+def plot_multiclass_decision_boundary(model, data, ax=None):
+    X, y = data
     x_min, x_max = X[:, 0].min() - 0.1, X[:, 0].max() + 0.1
     y_min, y_max = X[:, 1].min() - 0.1, X[:, 1].max() + 0.1
     xx, yy = np.meshgrid(np.linspace(x_min, x_max, 101), np.linspace(y_min, y_max, 101))
@@ -90,3 +91,83 @@ def animate_decision_area(
         anim.save(f"./{file}.gif", writer="imagemagick", fps=giffps)
 
     plt.show()
+
+
+def static_contour(steps, loss_grid, coords, pcvariances, filename="test.png"):
+    _, ax = plt.subplots(figsize=(6, 4))
+    coords_x, coords_y = coords
+    ax.contourf(coords_x, coords_y, loss_grid, levels=35, alpha=0.9, cmap="YlGnBu")
+    w1s = [step[0] for step in steps]
+    w2s = [step[1] for step in steps]
+    (pathline,) = ax.plot(w1s, w2s, color="r", lw=1)
+
+    ax.set_title("MLP")
+    ax.set_xlabel(f"principal component 0, {pcvariances[0]:.1%}")
+    ax.set_ylabel(f"principal component 1, {pcvariances[1]:.1%}")
+    plt.savefig(filename)
+    print(f"{filename} created.")
+
+
+def animate_contour(
+    param_steps,
+    loss_steps,
+    acc_steps,
+    loss_grid,
+    coords,
+    pcvariances,
+    giffps=30,
+    figsize=(9, 6),
+    filename="test.gif",
+):
+    print(f"Total frames to process: {len(param_steps)}")
+
+    fig, ax = plt.subplots(figsize=figsize)
+    coords_x, coords_y = coords
+    ax.contourf(coords_x, coords_y, loss_grid, levels=35, alpha=0.9, cmap="YlGnBu")
+
+    ax.set_title("Loss Landscape")
+    ax.set_xlabel(f"principal component 0, {pcvariances[0]:.1%}")
+    ax.set_ylabel(f"principal component 1, {pcvariances[1]:.1%}")
+
+    W0 = param_steps[0]
+    w1s = [W0[0]]
+    w2s = [W0[1]]
+    (pathline,) = ax.plot(w1s, w2s, color="r", lw=1)
+    (point,) = ax.plot(W0[0], W0[1], "ro")
+
+    step_text = ax.text(
+        0.05, 0.9, "", fontsize=10, ha="left", va="center", transform=ax.transAxes
+    )
+    value_text = ax.text(
+        0.05, 0.8, "", fontsize=10, ha="left", va="center", transform=ax.transAxes
+    )
+
+    def animate(i):
+        W = param_steps[i]
+        w1s.append(W[0])
+        w2s.append(W[1])
+        pathline.set_data(w1s, w2s)
+        point.set_data(W[0], W[1])
+        step_text.set_text(f"epoch: {i}")
+        value_text.set_text(f"loss: {loss_steps[i]: .2f}\nacc: {acc_steps[i]: .2f}")
+
+    # Call the animator. blit=True means only re-draw the parts that have changed.
+    # NOTE: anim must be global for the the animation to work
+    global anim
+    anim = FuncAnimation(
+        fig,
+        animate,
+        frames=len(param_steps),
+        interval=100,
+        blit=False,
+    )
+    plt.ioff()
+    anim.save(
+        f"./{filename}",
+        writer="imagemagick",
+        fps=giffps,
+        progress_callback=lambda i, n: print(
+            "\r" + f"Processing frame {i+1}/{n}", end=""
+        ),
+    )
+    print(f"\n{filename} created.")

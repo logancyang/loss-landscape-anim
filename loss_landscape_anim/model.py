@@ -20,7 +20,7 @@ from torch.optim import SGD, Adam
 from tqdm import tqdm
 
 LEARNING_RATE = 1e-3
-RES = 100
+RES = 50
 # Controls the margin from the optim starting point to the edge of the graph.
 # The value is a multiplier on the distance between the optim start and end
 MARGIN = 0.3
@@ -175,7 +175,7 @@ class DimReduction:
     def pca(self):
         pca = PCA(n_components=2, random_state=self.seed)
         optim_path = self.matrix_to_reduce.T
-        n_steps, n_dims = optim_path.shape
+        n_steps, _ = optim_path.shape
         pca.fit(optim_path)
         path_2d = pca.transform(optim_path)
         reduced_dirs = pca.components_
