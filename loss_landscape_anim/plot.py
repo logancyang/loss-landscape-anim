@@ -167,11 +167,13 @@ def animate_contour(
         f"./{filename}",
         writer="imagemagick",
         fps=giffps,
-        progress_callback=lambda i, n: print(
-            "\r"
-            + f"Processing frame {i+1}/{n}... Once processing is done, the conversion "
-            "will take a while...",
-            end="",
-        ),
+        progress_callback=_animate_progress,
     )
     print(f"\n{filename} created successfully.")
+
+
+def _animate_progress(current_frame, total_frames):
+    if current_frame + 1 != total_frames:
+        print("\r" + f"Processing {current_frame+1}/{total_frames}...", end="")
+    else:
+        print("\nConverting to gif, this may take a while...")
