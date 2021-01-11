@@ -130,16 +130,14 @@ def animate_contour(
         loss_steps = _sample_frames(loss_steps, max_frames)
         acc_steps = _sample_frames(acc_steps, max_frames)
 
-    print(
-        f"\nTotal frames to process: {len(param_steps)}, "
-        f"result frames per second: {giffps}"
-    )
+    n_frames = len(param_steps)
+    print(f"\nTotal frames to process: {n_frames}, result frames per second: {giffps}")
 
     fig, ax = plt.subplots(figsize=figsize)
     coords_x, coords_y = coords
     ax.contourf(coords_x, coords_y, loss_grid, levels=35, alpha=0.9, cmap="YlGnBu")
 
-    ax.set_title("Loss Landscape")
+    ax.set_title("Optimization in Loss Landscape")
     ax.set_xlabel(f"principal component 0, {pcvariances[0]:.1%}")
     ax.set_ylabel(f"principal component 1, {pcvariances[1]:.1%}")
 
@@ -195,7 +193,7 @@ def animate_contour(
 
 
 def _animate_progress(current_frame, total_frames):
-    print("\r" + f"Processing {current_frame+1}/{total_frames}...", end="")
+    print("\r" + f"Processing {current_frame+1}/{total_frames} frames...", end="")
     if current_frame + 1 == total_frames:
         print("\nConverting to gif, this may take a while...")
 

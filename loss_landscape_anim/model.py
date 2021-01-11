@@ -195,7 +195,9 @@ class DimReduction:
 
 
 class LossGrid:
-    def __init__(self, optim_path, model, data, loss_fn, seed, res=RES):
+    def __init__(
+        self, optim_path, model, data, loss_fn, seed, res=RES, tqdm_disable=False
+    ):
         dim_reduction = DimReduction(params_path=optim_path, seed=seed)
         reduced_dict = dim_reduction.pca()
 
@@ -206,16 +208,16 @@ class LossGrid:
         self.pcvariances = reduced_dict["pcvariances"]
 
         alpha = self._compute_stepsize(res)
-        self.params_grid = self.build_params_grid(res, alpha, seed)
+        self.params_grid = self.build_params_grid(res, alpha)
         self.loss_values_2d, self.argmin, self.loss_min = self.compute_loss_2d(
-            model, data, loss_fn
+            model, data, loss_fn, tqdm_disable=tqdm_disable
         )
-        self.loss_values_log_2d = self.loss_2d_log(self.loss_values_2d)
+        self.loss_values_log_2d = np.log(self.loss_values_2d)
         self.coords = self.convert_coords(res, alpha)
         # True optim in loss grid
         self.true_optim_point = self.indices_to_coords(self.argmin, res, alpha)
 
-    def build_params_grid(self, res, alpha, seed):
+    def build_params_grid(self, res, alpha):
         """
         Produce the grid for the contour plot. Start from the optimal point,
         span directions of the pca result with stepsize alpha, resolution res.
@@ -230,7 +232,7 @@ class LossGrid:
         assert (grid[res][res] == self.optim_point).all()
         return grid
 
-    def compute_loss_2d(self, model, data, loss_fn):
+    def compute_loss_2d(self, model, data, loss_fn, tqdm_disable=False):
         """
         Compute loss values for each weight vector in grid for the model
         and data
@@ -242,7 +244,7 @@ class LossGrid:
         loss_min = float("inf")
         argmin = ()
         print("Generating loss values for the contour plot...")
-        with tqdm(total=n * m) as pbar:
+        with tqdm(total=n * m, disable=tqdm_disable) as pbar:
             for i in range(n):
                 loss_row = []
                 for j in range(m):
@@ -257,8 +259,11 @@ class LossGrid:
                     loss_row.append(loss_val)
                     pbar.update(1)
                 loss_2d.append(loss_row)
+        # This transpose below is very important for a correct contour plot because
+        # originally in loss_2d, dir1 (y) is row-direction, dir0 (x) is column
+        loss_2darray = np.array(loss_2d).T
         print("Loss values generated.")
-        return loss_2d, argmin, loss_min
+        return loss_2darray, argmin, loss_min
 
     def _convert_coord(self, i, ref_point_coord, alpha):
         """
@@ -309,10 +314,6 @@ class LossGrid:
         x = i * alpha + self.optim_point_2d[0]
         y = j * alpha + self.optim_point_2d[1]
         return x, y
-
-    def loss_2d_log(self, loss_2d):
-        loss_2darray = np.array(loss_2d)
-        return np.log(loss_2darray)
 
     def get_argw(self, grid, arg_2d):
         i, j = arg_2d

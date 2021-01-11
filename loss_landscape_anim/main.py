@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from loss_landscape_anim.model import MLP, LossGrid
 from loss_landscape_anim.plot import animate_contour
 
+
 SEED = 180224
 
 
@@ -112,9 +113,9 @@ def loss_landscape_anim(
 optim_path, loss_path, accu_path = loss_landscape_anim(
     learning_rate=1e-2,
     optimizer="adam",
-    n_epochs=500,
+    n_epochs=200,
     giffps=15,
     seed=SEED,
-    load_model=True,
+    load_model=False,
     plot=True,
 )
