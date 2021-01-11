@@ -98,6 +98,8 @@ def loss_landscape_anim(
             acc_steps=accu_path,
             loss_grid=loss_log_2d,
             coords=loss_grid.coords,
+            true_optim_point=loss_grid.true_optim_point,
+            true_optim_loss=loss_grid.loss_min,
             pcvariances=loss_grid.pcvariances,
             giffps=giffps,
             max_frames=max_frames,
@@ -113,8 +115,6 @@ optim_path, loss_path, accu_path = loss_landscape_anim(
     n_epochs=500,
     giffps=15,
     seed=SEED,
-    load_model=False,
+    load_model=True,
     plot=True,
 )
-
-print(loss_path)

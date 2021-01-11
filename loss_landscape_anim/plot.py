@@ -79,7 +79,7 @@ def animate_decision_area(
             0.05, 0.8, "", fontsize=10, ha="left", va="center", transform=ax.transAxes
         )
         step_text.set_text(f"epoch: {i}")
-        value_text.set_text(f"loss: {loss_steps[i]: .2f}\nacc: {acc_steps[i]: .2f}")
+        value_text.set_text(f"loss: {loss_steps[i]: .3f}\nacc: {acc_steps[i]: .3f}")
 
     # call the animator.  blit=True means only
     # re-draw the parts that have changed.
@@ -116,6 +116,8 @@ def animate_contour(
     acc_steps,
     loss_grid,
     coords,
+    true_optim_point,
+    true_optim_loss,
     pcvariances,
     giffps,
     sampling=False,
@@ -146,12 +148,16 @@ def animate_contour(
     w2s = [W0[1]]
     (pathline,) = ax.plot(w1s, w2s, color="r", lw=1)
     (point,) = ax.plot(W0[0], W0[1], "ro")
+    (optim_point,) = ax.plot(
+        true_optim_point[0], true_optim_point[1], "bx", label="target local minimum"
+    )
+    plt.legend(loc="upper right")
 
     step_text = ax.text(
         0.05, 0.9, "", fontsize=10, ha="left", va="center", transform=ax.transAxes
     )
     value_text = ax.text(
-        0.05, 0.8, "", fontsize=10, ha="left", va="center", transform=ax.transAxes
+        0.05, 0.75, "", fontsize=10, ha="left", va="center", transform=ax.transAxes
     )
 
     def animate(i):
@@ -161,7 +167,11 @@ def animate_contour(
         pathline.set_data(w1s, w2s)
         point.set_data(W[0], W[1])
         step_text.set_text(f"step: {i}")
-        value_text.set_text(f"loss: {loss_steps[i]: .2f}\nacc: {acc_steps[i]: .2f}")
+        value_text.set_text(
+            f"loss: {loss_steps[i]: .3f}\nacc: {acc_steps[i]: .3f}\n\n"
+            f"target coords: {true_optim_point[0]: .3f}, {true_optim_point[1]: .3f}\n"
+            f"target loss: {true_optim_loss: .3f}"
+        )
 
     # Call the animator. blit=True means only re-draw the parts that have changed.
     # NOTE: anim must be global for the the animation to work

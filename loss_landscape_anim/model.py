@@ -207,11 +207,13 @@ class LossGrid:
 
         alpha = self._compute_stepsize(res)
         self.params_grid = self.build_params_grid(res, alpha, seed)
-        self.loss_values_2d, self.argmax_2d, self.argmin_2d = self.compute_loss_2d(
+        self.loss_values_2d, self.argmin, self.loss_min = self.compute_loss_2d(
             model, data, loss_fn
         )
         self.loss_values_log_2d = self.loss_2d_log(self.loss_values_2d)
-        self.coords = self.convert_coord(res, alpha)
+        self.coords = self.convert_coords(res, alpha)
+        # True optim in loss grid
+        self.true_optim_point = self.indices_to_coords(self.argmin, res, alpha)
 
     def build_params_grid(self, res, alpha, seed):
         """
@@ -237,6 +239,8 @@ class LossGrid:
         loss_2d = []
         n = len(self.params_grid)
         m = len(self.params_grid[0])
+        loss_min = float("inf")
+        argmin = ()
         print("Generating loss values for the contour plot...")
         with tqdm(total=n * m) as pbar:
             for i in range(n):
@@ -247,18 +251,27 @@ class LossGrid:
                     model.init_from_flat_params(w_ij)
                     y_pred = model(X)
                     loss_val = loss_fn(y_pred, y).item()
+                    if loss_val < loss_min:
+                        loss_min = loss_val
+                        argmin = (i, j)
                     loss_row.append(loss_val)
                     pbar.update(1)
                 loss_2d.append(loss_row)
-        loss_2darray = np.array(loss_2d)
-        # Get the 2D index from np array using np.unravel_index()
-        argmax_2d = np.unravel_index(loss_2darray.argmax(), loss_2darray.shape)
-        argmin_2d = np.unravel_index(loss_2darray.argmin(), loss_2darray.shape)
         print("Loss values generated.")
-        return loss_2d, argmax_2d, argmin_2d
+        return loss_2d, argmin, loss_min
 
-    def convert_coord(self, res, alpha):
+    def _convert_coord(self, i, ref_point_coord, alpha):
         """
+        Given a reference point coordinate (1D), find the value i steps away
+        with step size alpha
+        """
+        return i * alpha + ref_point_coord
+
+    def convert_coords(self, res, alpha):
+        """
+        Convert the coordinates from (i, j) indices to (x, y) values with
+        unit vectors as the top 2 principal components.
+
         Original path_2d has PCA output, i.e. the 2D projections of each W step
         onto the 2D space spanned by the top 2 PCs.
         We need these steps in (i, j) terms with unit vectors
@@ -268,28 +281,34 @@ class LossGrid:
         let center_2d = optim_point_2d
 
         ```
-        ni = (x - optim_point_2d[0]) / alpha
-        nj = (y - optim_point_2d[1]) / alpha
+        i = (x - optim_point_2d[0]) / alpha
+        j = (y - optim_point_2d[1]) / alpha
 
         i.e.
 
-        x = ni * alpha + optim_point_2d[0]
-        y = nj * alpha + optim_point_2d[1]
+        x = i * alpha + optim_point_2d[0]
+        y = j * alpha + optim_point_2d[1]
         ```
 
         where (x, y) is the 2D points in path_2d from PCA. Again, the unit
         vectors are reduced_w1 and reduced_w2.
         Return the grid coordinates in terms of (x, y) for the loss values
         """
-        converted_coord_x = []
-        converted_coord_y = []
+        converted_coord_xs = []
+        converted_coord_ys = []
         for i in range(-res, res):
-            x = i * alpha + self.optim_point_2d[0]
-            converted_coord_x.append(x)
-        for j in range(-res, res):
-            y = j * alpha + self.optim_point_2d[1]
-            converted_coord_y.append(y)
-        return np.array(converted_coord_x), np.array(converted_coord_y)
+            x = self._convert_coord(i, self.optim_point_2d[0], alpha)
+            y = self._convert_coord(i, self.optim_point_2d[1], alpha)
+            converted_coord_xs.append(x)
+            converted_coord_ys.append(y)
+        return np.array(converted_coord_xs), np.array(converted_coord_ys)
+
+    def indices_to_coords(self, indices, res, alpha):
+        grid_i, grid_j = indices
+        i, j = grid_i - res, grid_j - res
+        x = i * alpha + self.optim_point_2d[0]
+        y = j * alpha + self.optim_point_2d[1]
+        return x, y
 
     def loss_2d_log(self, loss_2d):
         loss_2darray = np.array(loss_2d)
