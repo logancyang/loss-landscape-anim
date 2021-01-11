@@ -1,6 +1,8 @@
+import warnings
+
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 
@@ -115,11 +117,21 @@ def animate_contour(
     loss_grid,
     coords,
     pcvariances,
-    giffps=30,
+    giffps,
+    sampling=False,
+    max_frames=300,
     figsize=(9, 6),
     filename="test.gif",
 ):
-    print(f"\nTotal frames to process: {len(param_steps)}")
+    if sampling:
+        param_steps = _sample_frames(param_steps, max_frames)
+        loss_steps = _sample_frames(loss_steps, max_frames)
+        acc_steps = _sample_frames(acc_steps, max_frames)
+
+    print(
+        f"\nTotal frames to process: {len(param_steps)}, "
+        f"result frames per second: {giffps}"
+    )
 
     fig, ax = plt.subplots(figsize=figsize)
     coords_x, coords_y = coords
@@ -148,7 +160,7 @@ def animate_contour(
         w2s.append(W[1])
         pathline.set_data(w1s, w2s)
         point.set_data(W[0], W[1])
-        step_text.set_text(f"epoch: {i}")
+        step_text.set_text(f"step: {i}")
         value_text.set_text(f"loss: {loss_steps[i]: .2f}\nacc: {acc_steps[i]: .2f}")
 
     # Call the animator. blit=True means only re-draw the parts that have changed.
@@ -173,7 +185,23 @@ def animate_contour(
 
 
 def _animate_progress(current_frame, total_frames):
-    if current_frame + 1 != total_frames:
-        print("\r" + f"Processing {current_frame+1}/{total_frames}...", end="")
-    else:
+    print("\r" + f"Processing {current_frame+1}/{total_frames}...", end="")
+    if current_frame + 1 == total_frames:
         print("\nConverting to gif, this may take a while...")
+
+
+def _sample_frames(steps, max_frames):
+    samples = []
+    steps_len = len(steps)
+    if max_frames > steps_len:
+        warnings.warn(
+            f"Less than {max_frames} frames provided, producing {steps_len} frames."
+        )
+        max_frames = steps_len
+    interval = steps_len // max_frames
+    counter = 0
+    for i in range(steps_len - 1, -1, -1):  # Sample from the end
+        if i % interval == 0 and counter < max_frames:
+            samples.append(steps[i])
+            counter += 1
+    return list(reversed(samples))

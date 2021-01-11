@@ -1,3 +1,4 @@
+import pathlib
 import pickle
 
 import pytorch_lightning as pl
@@ -8,79 +9,112 @@ from torch.utils.data import DataLoader, TensorDataset
 from loss_landscape_anim.model import MLP, LossGrid
 from loss_landscape_anim.plot import animate_contour
 
-
-"""CLI Arguments"""
-NUM_EPOCHS = 10
-BATCH_SIZE = 32
-LOAD_MODEL = True
-
-# Optional seed
 SEED = 180224
-torch.manual_seed(SEED)
 
 
-# TODO: Generic data loader
-"""Load data"""
-datadict = pickle.load(open("./sample_data/data_2d_3class.p", "rb"))
-# Convert np array to tensor
-X_train = torch.Tensor(datadict["X_train"])
-y_train = torch.LongTensor(datadict["y_train"])
-dataset = TensorDataset(X_train, y_train)
+def loss_landscape_anim(
+    learning_rate,
+    optimizer="adam",
+    dataset=None,
+    n_epochs=10,
+    batch_size=None,
+    model_path="./models/model.pt",
+    load_model=False,
+    plot=True,
+    giffps=15,
+    sampling=False,
+    max_frames=300,
+    seed=None,
+):
+    if seed:
+        torch.manual_seed(seed)
 
-bs = 32
-train_loader = DataLoader(dataset, batch_size=BATCH_SIZE)
-# dataset = MNIST(os.getcwd(), download=True, transform=transforms.ToTensor())
-# train_loader = DataLoader(dataset)
+    # TODO: Generic data loader
+    """Load data"""
+    datadict = pickle.load(open("./sample_data/data_2d_3class.p", "rb"))
+    # Convert np array to tensor
+    X_train = torch.Tensor(datadict["X_train"])
+    y_train = torch.LongTensor(datadict["y_train"])
+    dataset = TensorDataset(X_train, y_train)
 
-INPUT_DIM = X_train.shape[1]  # X is 2-dimensional
-NUM_CLASSES = 3
+    if not batch_size:
+        batch_size = len(X_train)
+    train_loader = DataLoader(dataset, batch_size=batch_size)
+    # dataset = MNIST(os.getcwd(), download=True, transform=transforms.ToTensor())
+    # train_loader = DataLoader(dataset)
 
-# TODO: Generic model definition, default to MLP
-"""Define model"""
+    INPUT_DIM = X_train.shape[1]  # X is 2-dimensional
+    NUM_CLASSES = 3  # TODO: Get # classes from train_y
 
-# TODO: Optional training, skip if load trained model
-"""Train model"""
-if not LOAD_MODEL:
-    HIDDEN_DIM = 0
-    NUM_HIDDEN_LAYERS = 0
-    torch.manual_seed(SEED)
+    # TODO: Generic model definition, default to MLP
+    """Define model"""
 
-    model = MLP(
-        input_dim=INPUT_DIM,
-        hidden_dim=HIDDEN_DIM,
-        num_classes=NUM_CLASSES,
-        num_hidden_layers=NUM_HIDDEN_LAYERS,
-        optimizer="adam",
+    # TODO: Optional training, skip if load trained model
+    """Train model"""
+    if not load_model:
+        HIDDEN_DIM = 0
+        NUM_HIDDEN_LAYERS = 0
+
+        model = MLP(
+            input_dim=INPUT_DIM,
+            hidden_dim=HIDDEN_DIM,
+            num_classes=NUM_CLASSES,
+            num_hidden_layers=NUM_HIDDEN_LAYERS,
+            optimizer=optimizer,
+            learning_rate=learning_rate,
+        )
+        trainer = pl.Trainer(max_epochs=n_epochs)
+        trainer.fit(model, train_loader)
+        torch.save(model, model_path)
+
+    model_file = pathlib.Path(model_path)
+    if not model_file.is_file():
+        raise Exception("Model file not found!")
+
+    model = torch.load(model_path)
+    optim_path, loss_path, accu_path = zip(
+        *[(path["flat_w"], path["loss"], path["accuracy"]) for path in model.optim_path]
     )
-    trainer = pl.Trainer(max_epochs=NUM_EPOCHS)
-    trainer.fit(model, train_loader)
-    torch.save(model, "./models/model.pt")
 
-model = torch.load("./models/model.pt")
+    print(f"Total steps in optimization path: {len(optim_path)}")
 
-optim_path, loss_path, accu_path = zip(
-    *[(path["flat_w"], path["loss"], path["accuracy"]) for path in model.optim_path]
-)
+    """PCA and Loss Grid"""
 
-print(f"Total points in optim_path: {len(optim_path)}")
+    if plot:
+        loss_grid = LossGrid(
+            optim_path=optim_path,
+            model=model,
+            data=dataset.tensors,
+            loss_fn=F.cross_entropy,
+            seed=SEED,
+        )
 
-"""PCA and Loss Grid"""
-loss_grid = LossGrid(
-    optim_path=optim_path,
-    model=model,
-    data=dataset.tensors,
-    loss_fn=F.cross_entropy,
+        loss_log_2d = loss_grid.loss_values_log_2d
+        steps = loss_grid.path_2d.tolist()
+
+        animate_contour(
+            param_steps=steps,
+            loss_steps=loss_path,
+            acc_steps=accu_path,
+            loss_grid=loss_log_2d,
+            coords=loss_grid.coords,
+            pcvariances=loss_grid.pcvariances,
+            giffps=giffps,
+            max_frames=max_frames,
+            sampling=sampling,
+        )
+
+    return list(optim_path), list(loss_path), list(accu_path)
+
+
+optim_path, loss_path, accu_path = loss_landscape_anim(
+    learning_rate=1e-2,
+    optimizer="adam",
+    n_epochs=500,
+    giffps=15,
     seed=SEED,
+    load_model=False,
+    plot=True,
 )
 
-loss_log_2d = loss_grid.loss_values_log_2d
-steps = loss_grid.path_2d.tolist()
-
-animate_contour(
-    param_steps=steps,
-    loss_steps=loss_path,
-    acc_steps=accu_path,
-    loss_grid=loss_log_2d,
-    coords=loss_grid.coords,
-    pcvariances=loss_grid.pcvariances,
-)
+print(loss_path)
