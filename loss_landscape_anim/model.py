@@ -19,7 +19,7 @@ from torch import nn
 from torch.optim import SGD, Adam
 from tqdm import tqdm
 
-LEARNING_RATE = 1e-3
+
 RES = 50
 # Controls the margin from the optim starting point to the edge of the graph.
 # The value is a multiplier on the distance between the optim start and end
@@ -27,7 +27,7 @@ MARGIN = 0.3
 
 
 class GenericModel(pl.LightningModule):
-    def __init__(self, optimizer, learning_rate=1e-3, custom_optimizer=None):
+    def __init__(self, optimizer, learning_rate, custom_optimizer=None):
         super().__init__()
         self.learning_rate = learning_rate
         self.optimizer = optimizer
@@ -104,9 +104,9 @@ class MLP(GenericModel):
         input_dim,
         hidden_dim,
         num_classes,
+        learning_rate,
         num_hidden_layers=1,
         optimizer="adam",
-        learning_rate=LEARNING_RATE,
         custom_optimizer=None,
     ):
         super().__init__(optimizer, learning_rate, custom_optimizer)
@@ -314,10 +314,6 @@ class LossGrid:
         x = i * alpha + self.optim_point_2d[0]
         y = j * alpha + self.optim_point_2d[1]
         return x, y
-
-    def get_argw(self, grid, arg_2d):
-        i, j = arg_2d
-        return grid[i][j]
 
     def _compute_stepsize(self, res):
         dist_2d = self.path_2d[-1] - self.path_2d[0]

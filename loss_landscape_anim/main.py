@@ -15,13 +15,15 @@ SEED = 180224
 
 def loss_landscape_anim(
     learning_rate,
-    optimizer="adam",
     dataset=None,
-    n_epochs=10,
+    custom_model=None,
+    n_epochs=50,
     batch_size=None,
+    optimizer="adam",
     model_path="./models/model.pt",
     load_model=False,
-    plot=True,
+    output_to_file=True,
+    output_filename="test.gif",
     giffps=15,
     sampling=False,
     max_frames=300,
@@ -81,31 +83,32 @@ def loss_landscape_anim(
 
     """PCA and Loss Grid"""
 
-    if plot:
-        loss_grid = LossGrid(
-            optim_path=optim_path,
-            model=model,
-            data=dataset.tensors,
-            loss_fn=F.cross_entropy,
-            seed=SEED,
-        )
+    loss_grid = LossGrid(
+        optim_path=optim_path,
+        model=model,
+        data=dataset.tensors,
+        loss_fn=F.cross_entropy,
+        seed=SEED,
+    )
 
-        loss_log_2d = loss_grid.loss_values_log_2d
-        steps = loss_grid.path_2d.tolist()
+    loss_log_2d = loss_grid.loss_values_log_2d
+    steps = loss_grid.path_2d.tolist()
 
-        animate_contour(
-            param_steps=steps,
-            loss_steps=loss_path,
-            acc_steps=accu_path,
-            loss_grid=loss_log_2d,
-            coords=loss_grid.coords,
-            true_optim_point=loss_grid.true_optim_point,
-            true_optim_loss=loss_grid.loss_min,
-            pcvariances=loss_grid.pcvariances,
-            giffps=giffps,
-            max_frames=max_frames,
-            sampling=sampling,
-        )
+    animate_contour(
+        param_steps=steps,
+        loss_steps=loss_path,
+        acc_steps=accu_path,
+        loss_grid=loss_log_2d,
+        coords=loss_grid.coords,
+        true_optim_point=loss_grid.true_optim_point,
+        true_optim_loss=loss_grid.loss_min,
+        pcvariances=loss_grid.pcvariances,
+        giffps=giffps,
+        max_frames=max_frames,
+        sampling=sampling,
+        output_to_file=output_to_file,
+        filename=output_filename,
+    )
 
     return list(optim_path), list(loss_path), list(accu_path)
 
@@ -116,6 +119,6 @@ optim_path, loss_path, accu_path = loss_landscape_anim(
     n_epochs=200,
     giffps=15,
     seed=SEED,
-    load_model=False,
-    plot=True,
+    load_model=True,
+    output_to_file=False,
 )

@@ -123,6 +123,7 @@ def animate_contour(
     sampling=False,
     max_frames=300,
     figsize=(9, 6),
+    output_to_file=True,
     filename="test.gif",
 ):
     if sampling:
@@ -175,21 +176,21 @@ def animate_contour(
     # NOTE: anim must be global for the the animation to work
     global anim
     anim = FuncAnimation(
-        fig,
-        animate,
-        frames=len(param_steps),
-        interval=100,
-        blit=False,
+        fig, animate, frames=len(param_steps), interval=100, blit=False, repeat=False
     )
-    plt.ioff()
-    print(f"Writing {filename}.")
-    anim.save(
-        f"./{filename}",
-        writer="imagemagick",
-        fps=giffps,
-        progress_callback=_animate_progress,
-    )
-    print(f"\n{filename} created successfully.")
+
+    if output_to_file:
+        print(f"Writing {filename}.")
+        anim.save(
+            f"./{filename}",
+            writer="imagemagick",
+            fps=giffps,
+            progress_callback=_animate_progress,
+        )
+        print(f"\n{filename} created successfully.")
+    else:
+        plt.ioff()
+        plt.show()
 
 
 def _animate_progress(current_frame, total_frames):
