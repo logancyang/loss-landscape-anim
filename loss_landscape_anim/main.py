@@ -42,7 +42,7 @@ def loss_landscape_anim(
 
     if not batch_size:
         batch_size = len(X_train)
-    train_loader = DataLoader(dataset, batch_size=batch_size)
+    train_loader = DataLoader(dataset, batch_size=batch_size, num_workers=0)
     # dataset = MNIST(os.getcwd(), download=True, transform=transforms.ToTensor())
     # train_loader = DataLoader(dataset)
 
@@ -113,12 +113,15 @@ def loss_landscape_anim(
     return list(optim_path), list(loss_path), list(accu_path)
 
 
-optim_path, loss_path, accu_path = loss_landscape_anim(
-    learning_rate=1e-2,
-    optimizer="adam",
-    n_epochs=200,
-    giffps=15,
-    seed=SEED,
-    load_model=True,
-    output_to_file=False,
-)
+if __name__ == "__main__":
+    optim_path, loss_path, accu_path = loss_landscape_anim(
+        learning_rate=1e-3,
+        optimizer="adam",
+        n_epochs=100,
+        batch_size=64,
+        giffps=15,
+        seed=None,
+        load_model=False,
+        output_to_file=True,
+        sampling=True,
+    )
