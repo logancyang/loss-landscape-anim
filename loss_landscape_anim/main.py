@@ -1,21 +1,21 @@
 import pathlib
-import pickle
+import warnings
 
 import pytorch_lightning as pl
 import torch
-import torch.nn.functional as F
-from torch.utils.data import DataLoader, TensorDataset
 
+from loss_landscape_anim.datamodule import MNISTDataModule, SampleDataModule
 from loss_landscape_anim.model import MLP, LossGrid
-from loss_landscape_anim.plot import animate_contour
+from loss_landscape_anim.plot import animate_contour, sample_frames
 
+warnings.filterwarnings("ignore")
 
 SEED = 180224
 
 
 def loss_landscape_anim(
     learning_rate,
-    dataset=None,
+    datamodule=None,
     custom_model=None,
     n_epochs=50,
     batch_size=None,
@@ -23,50 +23,36 @@ def loss_landscape_anim(
     model_path="./models/model.pt",
     load_model=False,
     output_to_file=True,
-    output_filename="test.gif",
+    output_filename="sample.gif",
     giffps=15,
     sampling=False,
-    max_frames=300,
+    n_frames=300,
     seed=None,
 ):
     if seed:
         torch.manual_seed(seed)
 
-    # TODO: Generic data loader
-    """Load data"""
-    datadict = pickle.load(open("./sample_data/data_2d_3class.p", "rb"))
-    # Convert np array to tensor
-    X_train = torch.Tensor(datadict["X_train"])
-    y_train = torch.LongTensor(datadict["y_train"])
-    dataset = TensorDataset(X_train, y_train)
+    if not datamodule:
+        # datamodule = SampleDataModule()
+        datamodule = MNISTDataModule(n_examples=2000)
 
-    if not batch_size:
-        batch_size = len(X_train)
-    train_loader = DataLoader(dataset, batch_size=batch_size, num_workers=0)
-    # dataset = MNIST(os.getcwd(), download=True, transform=transforms.ToTensor())
-    # train_loader = DataLoader(dataset)
+    train_loader = datamodule.train_dataloader(batch_size=batch_size)
 
-    INPUT_DIM = X_train.shape[1]  # X is 2-dimensional
-    NUM_CLASSES = 3  # TODO: Get # classes from train_y
-
-    # TODO: Generic model definition, default to MLP
-    """Define model"""
-
-    # TODO: Optional training, skip if load trained model
-    """Train model"""
+    # Train model
     if not load_model:
-        HIDDEN_DIM = 0
-        NUM_HIDDEN_LAYERS = 0
+        n_hidden_dim = 100
+        n_hidden_layers = 2
 
         model = MLP(
-            input_dim=INPUT_DIM,
-            hidden_dim=HIDDEN_DIM,
-            num_classes=NUM_CLASSES,
-            num_hidden_layers=NUM_HIDDEN_LAYERS,
+            input_dim=datamodule.input_dim,
+            hidden_dim=n_hidden_dim,
+            num_classes=datamodule.n_classes,
+            num_hidden_layers=n_hidden_layers,
             optimizer=optimizer,
             learning_rate=learning_rate,
         )
         trainer = pl.Trainer(max_epochs=n_epochs)
+        print(f"Training for {n_epochs} epochs...")
         trainer.fit(model, train_loader)
         torch.save(model, model_path)
 
@@ -75,8 +61,13 @@ def loss_landscape_anim(
         raise Exception("Model file not found!")
 
     model = torch.load(model_path)
+    # Sample from full path
+    sampled_optim_path = sample_frames(model.optim_path, max_frames=n_frames)
     optim_path, loss_path, accu_path = zip(
-        *[(path["flat_w"], path["loss"], path["accuracy"]) for path in model.optim_path]
+        *[
+            (path["flat_w"], path["loss"], path["accuracy"])
+            for path in sampled_optim_path
+        ]
     )
 
     print(f"Total steps in optimization path: {len(optim_path)}")
@@ -86,8 +77,7 @@ def loss_landscape_anim(
     loss_grid = LossGrid(
         optim_path=optim_path,
         model=model,
-        data=dataset.tensors,
-        loss_fn=F.cross_entropy,
+        data=datamodule.dataset.tensors,
         seed=SEED,
     )
 
@@ -104,7 +94,6 @@ def loss_landscape_anim(
         true_optim_loss=loss_grid.loss_min,
         pcvariances=loss_grid.pcvariances,
         giffps=giffps,
-        max_frames=max_frames,
         sampling=sampling,
         output_to_file=output_to_file,
         filename=output_filename,
@@ -115,13 +104,12 @@ def loss_landscape_anim(
 
 if __name__ == "__main__":
     optim_path, loss_path, accu_path = loss_landscape_anim(
-        learning_rate=1e-3,
+        learning_rate=1e-2,
+        batch_size=1,
         optimizer="adam",
-        n_epochs=100,
-        batch_size=64,
+        n_epochs=10,
         giffps=15,
-        seed=None,
+        seed=SEED,
         load_model=False,
         output_to_file=True,
-        sampling=True,
     )

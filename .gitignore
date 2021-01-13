@@ -42,6 +42,7 @@ build
 *.ldb-log
 *.ldb-shm
 data/*
+MNIST/
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
@@ -59,3 +60,5 @@ lightning_logs
 # Test image
 test.png
 test.gif
+sample.gif
+

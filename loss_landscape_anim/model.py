@@ -138,12 +138,15 @@ class MLP(GenericModel):
             y_pred = F.softmax(y_pred, dim=1)
         return y_pred
 
+    def loss_fn(self, y_pred, y):
+        return F.cross_entropy(y_pred, y)
+
     def training_step(self, batch, batch_idx):
         X, y = batch
         y_pred = self(X)
         # Get model weights flattened here to append to optim_path later
         flat_w = self.get_flat_params()
-        loss = F.cross_entropy(y_pred, y)
+        loss = self.loss_fn(y_pred, y)
 
         preds = y_pred.max(dim=1)[1]  # class
         accuracy = self.accuracy(preds, y)
@@ -195,9 +198,7 @@ class DimReduction:
 
 
 class LossGrid:
-    def __init__(
-        self, optim_path, model, data, loss_fn, seed, res=RES, tqdm_disable=False
-    ):
+    def __init__(self, optim_path, model, data, seed, res=RES, tqdm_disable=False):
         dim_reduction = DimReduction(params_path=optim_path, seed=seed)
         reduced_dict = dim_reduction.pca()
 
@@ -210,7 +211,7 @@ class LossGrid:
         alpha = self._compute_stepsize(res)
         self.params_grid = self.build_params_grid(res, alpha)
         self.loss_values_2d, self.argmin, self.loss_min = self.compute_loss_2d(
-            model, data, loss_fn, tqdm_disable=tqdm_disable
+            model, data, tqdm_disable=tqdm_disable
         )
         self.loss_values_log_2d = np.log(self.loss_values_2d)
         self.coords = self.convert_coords(res, alpha)
@@ -232,7 +233,7 @@ class LossGrid:
         assert (grid[res][res] == self.optim_point).all()
         return grid
 
-    def compute_loss_2d(self, model, data, loss_fn, tqdm_disable=False):
+    def compute_loss_2d(self, model, data, tqdm_disable=False):
         """
         Compute loss values for each weight vector in grid for the model
         and data
@@ -252,7 +253,7 @@ class LossGrid:
                     # Load flattened weight vector into model
                     model.init_from_flat_params(w_ij)
                     y_pred = model(X)
-                    loss_val = loss_fn(y_pred, y).item()
+                    loss_val = model.loss_fn(y_pred, y).item()
                     if loss_val < loss_min:
                         loss_min = loss_val
                         argmin = (i, j)

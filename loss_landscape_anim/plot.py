@@ -127,9 +127,10 @@ def animate_contour(
     filename="test.gif",
 ):
     if sampling:
-        param_steps = _sample_frames(param_steps, max_frames)
-        loss_steps = _sample_frames(loss_steps, max_frames)
-        acc_steps = _sample_frames(acc_steps, max_frames)
+        print(f"\nSampling {max_frames} from {len(param_steps)} input frames.")
+        param_steps = sample_frames(param_steps, max_frames)
+        loss_steps = sample_frames(loss_steps, max_frames)
+        acc_steps = sample_frames(acc_steps, max_frames)
 
     n_frames = len(param_steps)
     print(f"\nTotal frames to process: {n_frames}, result frames per second: {giffps}")
@@ -199,7 +200,7 @@ def _animate_progress(current_frame, total_frames):
         print("\nConverting to gif, this may take a while...")
 
 
-def _sample_frames(steps, max_frames):
+def sample_frames(steps, max_frames):
     samples = []
     steps_len = len(steps)
     if max_frames > steps_len:
