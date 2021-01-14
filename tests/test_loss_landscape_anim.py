@@ -2,9 +2,8 @@ import pickle
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from loss_landscape_anim import __version__
-from loss_landscape_anim.model import LossGrid
+from loss_landscape_anim.loss_landscape import LossGrid
 from pytest import fixture
 from torch.utils.data import TensorDataset
 
@@ -40,7 +39,6 @@ def test_loss_grid(test_model, test_dataset):
         optim_path=optim_path,
         model=test_model,
         data=test_dataset.tensors,
-        loss_fn=F.cross_entropy,
         seed=SEED,
         tqdm_disable=True,
     )

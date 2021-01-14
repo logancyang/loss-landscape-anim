@@ -1,3 +1,15 @@
+"""
+Steps:
+1. Load data
+2. Create a model in torch
+3. Record the parameters during training
+4. Use PCA to project the parameters to 2D
+5. Collect the values in 2D:
+    a. A list of 2D values as the trajectory obtained by projecting the
+       parameters down to the 2D space spanned by the top 2 PC.
+    b. A grid of 2D values that capture (a) and some more for visual
+       aesthetics.
+"""
 import pathlib
 import warnings
 
@@ -5,7 +17,8 @@ import pytorch_lightning as pl
 import torch
 
 from loss_landscape_anim.datamodule import MNISTDataModule, SampleDataModule
-from loss_landscape_anim.model import MLP, LossGrid
+from loss_landscape_anim.loss_landscape import LossGrid
+from loss_landscape_anim.model import MLP
 from loss_landscape_anim.plot import animate_contour, sample_frames
 
 warnings.filterwarnings("ignore")
@@ -20,7 +33,7 @@ def loss_landscape_anim(
     n_epochs=50,
     batch_size=None,
     optimizer="adam",
-    model_path="./models/model.pt",
+    model_path="./checkpoints/model.pt",
     load_model=False,
     output_to_file=True,
     output_filename="sample.gif",
@@ -51,7 +64,7 @@ def loss_landscape_anim(
             optimizer=optimizer,
             learning_rate=learning_rate,
         )
-        trainer = pl.Trainer(max_epochs=n_epochs)
+        trainer = pl.Trainer(progress_bar_refresh_rate=5, max_epochs=n_epochs)
         print(f"Training for {n_epochs} epochs...")
         trainer.fit(model, train_loader)
         torch.save(model, model_path)

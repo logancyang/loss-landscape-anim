@@ -55,6 +55,7 @@ MNIST/
 
 # Model
 models/
+checkpoints/
 lightning_logs
 
 # Test image
