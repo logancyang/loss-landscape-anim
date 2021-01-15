@@ -1,24 +1,28 @@
 import os
 import pickle
 
+import importlib_resources
 import pytorch_lightning as pl
 import torch
-from torch.utils.data import DataLoader, TensorDataset, Subset
+from torch.utils.data import DataLoader, Subset, TensorDataset
 from torchvision import transforms
 from torchvision.datasets import MNIST
-
-SPIRALS_DATA_PATH = "./sample_data/spirals.p"
 
 
 class SpiralsDataModule(pl.LightningDataModule):
     def __init__(self, batch_size=None):
-        self.datadict = pickle.load(open(SPIRALS_DATA_PATH, "rb"))
+        self.datadict = self._load_spirals_data()
         self.input_dim = self.datadict["X_train"].shape[1]
         self.num_classes = len(set(self.datadict["y_train"]))
         self.X = torch.Tensor(self.datadict["X_train"])
         self.y = torch.LongTensor(self.datadict["y_train"])
         self.dataset = TensorDataset(self.X, self.y)
         self.batch_size = batch_size if batch_size else len(self.X)
+
+    def _load_spirals_data(self):
+        resources = importlib_resources.files("loss_landscape_anim") / "sample_data"
+        file = resources / "spirals.p"
+        return pickle.load(open(file, "rb"))
 
     def train_dataloader(self, num_workers=0):
         return DataLoader(
