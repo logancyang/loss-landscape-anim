@@ -73,20 +73,25 @@ class GenericModel(pl.LightningModule):
 class MLP(GenericModel):
     """
     Multilayer Perceptron with specified number of hidden layers
-    with equal number of hidden dimensions in each layer
+    with equal number of hidden dimensions in each layer. Default is
+    1 hidden layer with 50 neurons.
     """
 
     def __init__(
         self,
         input_dim,
-        hidden_dim,
         num_classes,
         learning_rate,
         num_hidden_layers=1,
+        hidden_dim=50,
         optimizer="adam",
         custom_optimizer=None,
     ):
-        super().__init__(optimizer, learning_rate, custom_optimizer)
+        super().__init__(
+            optimizer=optimizer,
+            learning_rate=learning_rate,
+            custom_optimizer=custom_optimizer,
+        )
         # NOTE: nn.ModuleList is not the same as Sequential,
         # the former doesn't have forward implemented
         if num_hidden_layers == 0:
@@ -142,5 +147,79 @@ class MLP(GenericModel):
         return {"loss": loss, "accuracy": accuracy, "flat_w": flat_w}
 
     def training_epoch_end(self, training_step_outputs):
-        """Only record optimization path on epoch level"""
+        # Only record the last step in each epoch
+        self.optim_path.append(training_step_outputs[-1])
+
+
+class LeNet(GenericModel):
+    """
+    LeNet-5 convolutional neural network
+    """
+
+    def __init__(self, learning_rate, optimizer="adam", custom_optimizer=None):
+        super().__init__(optimizer, learning_rate, custom_optimizer)
+        self.relu = nn.ReLU()
+        self.pool = nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
+        self.conv1 = nn.Conv2d(
+            in_channels=1,
+            out_channels=6,
+            kernel_size=(5, 5),
+            stride=(1, 1),
+            padding=(0, 0),
+        )
+        self.conv2 = nn.Conv2d(
+            in_channels=6,
+            out_channels=16,
+            kernel_size=(5, 5),
+            stride=(1, 1),
+            padding=(0, 0),
+        )
+        self.conv3 = nn.Conv2d(
+            in_channels=16,
+            out_channels=120,
+            kernel_size=(5, 5),
+            stride=(1, 1),
+            padding=(0, 0),
+        )
+        self.fc1 = nn.Linear(120, 84)
+        self.fc2 = nn.Linear(84, 10)
+
+    def forward(self, x):
+        x = self.relu(self.conv1(x))
+        x = self.pool(x)
+        x = self.relu(self.conv2(x))
+        x = self.pool(x)
+        x = self.relu(self.conv3(x))  # (n_examples, 120, 1, 1) -> (n_examples, 120)
+        x = x.reshape(x.shape[0], -1)
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+    def loss_fn(self, y_pred, y):
+        return F.cross_entropy(y_pred, y)
+
+    def training_step(self, batch, batch_idx):
+        X, y = batch
+        y_pred = self(X)
+        # Get model weights flattened here to append to optim_path later
+        flat_w = self.get_flat_params()
+        loss = self.loss_fn(y_pred, y)
+
+        preds = y_pred.max(dim=1)[1]  # class
+        accuracy = self.accuracy(preds, y)
+
+        self.log(
+            "train_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True
+        )
+        self.log(
+            "train_acc",
+            accuracy,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+        )
+        return {"loss": loss, "accuracy": accuracy, "flat_w": flat_w}
+
+    def training_epoch_end(self, training_step_outputs):
         self.optim_path.extend(training_step_outputs)

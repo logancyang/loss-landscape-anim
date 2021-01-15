@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 import torch
 from sklearn.decomposition import PCA
@@ -38,7 +40,18 @@ class DimReduction:
 
 
 class LossGrid:
-    def __init__(self, optim_path, model, data, seed, res=RES, tqdm_disable=False):
+    def __init__(
+        self,
+        optim_path,
+        model,
+        data,
+        seed,
+        res=RES,
+        tqdm_disable=False,
+        save_grid=True,
+        load_grid=False,
+        filepath="./checkpoints/lossgrid.p",
+    ):
         dim_reduction = DimReduction(params_path=optim_path, seed=seed)
         reduced_dict = dim_reduction.pca()
 
@@ -50,9 +63,22 @@ class LossGrid:
 
         alpha = self._compute_stepsize(res)
         self.params_grid = self.build_params_grid(res, alpha)
-        self.loss_values_2d, self.argmin, self.loss_min = self.compute_loss_2d(
-            model, data, tqdm_disable=tqdm_disable
-        )
+
+        if load_grid:
+            self.loss_values_2d, self.argmin, self.loss_min = pickle.load(
+                open(filepath, "rb")
+            )
+            print("Loss grid loaded from disk.")
+        else:
+            self.loss_values_2d, self.argmin, self.loss_min = self.compute_loss_2d(
+                model, data, tqdm_disable=tqdm_disable
+            )
+
+        if save_grid:
+            loss_2d_tup = (self.loss_values_2d, self.argmin, self.loss_min)
+            pickle.dump(loss_2d_tup, open(filepath, "wb"))
+            print("Loss grid saved to disk.")
+
         self.loss_values_log_2d = np.log(self.loss_values_2d)
         self.coords = self.convert_coords(res, alpha)
         # True optim in loss grid

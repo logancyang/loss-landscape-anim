@@ -11,17 +11,15 @@ Steps:
        aesthetics.
 """
 import pathlib
-import warnings
 
 import pytorch_lightning as pl
 import torch
 
 from loss_landscape_anim.datamodule import MNISTDataModule, SampleDataModule
 from loss_landscape_anim.loss_landscape import LossGrid
-from loss_landscape_anim.model import MLP
+from loss_landscape_anim.model import MLP, LeNet
 from loss_landscape_anim.plot import animate_contour, sample_frames
 
-warnings.filterwarnings("ignore")
 
 SEED = 180224
 
@@ -47,23 +45,20 @@ def loss_landscape_anim(
 
     if not datamodule:
         # datamodule = SampleDataModule()
-        datamodule = MNISTDataModule(n_examples=2000)
+        datamodule = MNISTDataModule(batch_size=batch_size, n_examples=3000)
 
-    train_loader = datamodule.train_dataloader(batch_size=batch_size)
+    train_loader = datamodule.train_dataloader()
 
     # Train model
     if not load_model:
-        n_hidden_dim = 100
-        n_hidden_layers = 2
+        # model = MLP(
+        #     input_dim=datamodule.input_dim,
+        #     num_classes=datamodule.num_classes,
+        #     learning_rate=learning_rate,
+        #     optimizer=optimizer,
+        # )
 
-        model = MLP(
-            input_dim=datamodule.input_dim,
-            hidden_dim=n_hidden_dim,
-            num_classes=datamodule.n_classes,
-            num_hidden_layers=n_hidden_layers,
-            optimizer=optimizer,
-            learning_rate=learning_rate,
-        )
+        model = LeNet(learning_rate=learning_rate)
         trainer = pl.Trainer(progress_bar_refresh_rate=5, max_epochs=n_epochs)
         print(f"Training for {n_epochs} epochs...")
         trainer.fit(model, train_loader)
@@ -117,8 +112,8 @@ def loss_landscape_anim(
 
 if __name__ == "__main__":
     optim_path, loss_path, accu_path = loss_landscape_anim(
-        learning_rate=1e-2,
-        batch_size=1,
+        learning_rate=1e-3,
+        batch_size=16,
         optimizer="adam",
         n_epochs=10,
         giffps=15,
