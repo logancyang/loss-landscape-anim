@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "loss-landscape-anim"
-version = "0.1.0"
+version = "0.1.1"
 description = "Animate the optimization trajectory of neural networks"
 authors = ["LoganYang <logancyang@gmail.com>"]
 keywords = [
