@@ -1,7 +1,7 @@
 """
 Steps:
 1. Load data
-2. Create a model in torch
+2. Create a pytorch lightning model
 3. Record the parameters during training
 4. Use PCA to project the parameters to 2D
 5. Collect the values in 2D:
@@ -15,7 +15,7 @@ import pathlib
 import pytorch_lightning as pl
 import torch
 
-from loss_landscape_anim.datamodule import MNISTDataModule, SampleDataModule
+from loss_landscape_anim.datamodule import MNISTDataModule, SpiralsDataModule
 from loss_landscape_anim.loss_landscape import LossGrid
 from loss_landscape_anim.model import MLP, LeNet
 from loss_landscape_anim.plot import animate_contour, sample_frames
@@ -25,11 +25,9 @@ SEED = 180224
 
 
 def loss_landscape_anim(
-    learning_rate,
+    n_epochs,
     datamodule=None,
-    custom_model=None,
-    n_epochs=50,
-    batch_size=None,
+    model=None,
     optimizer="adam",
     model_path="./checkpoints/model.pt",
     load_model=False,
@@ -44,21 +42,25 @@ def loss_landscape_anim(
         torch.manual_seed(seed)
 
     if not datamodule:
-        # datamodule = SampleDataModule()
-        datamodule = MNISTDataModule(batch_size=batch_size, n_examples=3000)
+        print("Data module not provided, using sample data: spirals dataset")
+        datamodule = SpiralsDataModule()
+
+    if not model:
+        print(
+            "Model not provided, using default classifier: "
+            "MLP with 1 hidden layer of 50 neurons"
+        )
+        model = MLP(
+            input_dim=datamodule.input_dim,
+            num_classes=datamodule.num_classes,
+            learning_rate=5e-3,
+            optimizer=optimizer,
+        )
 
     train_loader = datamodule.train_dataloader()
 
     # Train model
     if not load_model:
-        # model = MLP(
-        #     input_dim=datamodule.input_dim,
-        #     num_classes=datamodule.num_classes,
-        #     learning_rate=learning_rate,
-        #     optimizer=optimizer,
-        # )
-
-        model = LeNet(learning_rate=learning_rate)
         trainer = pl.Trainer(progress_bar_refresh_rate=5, max_epochs=n_epochs)
         print(f"Training for {n_epochs} epochs...")
         trainer.fit(model, train_loader)
@@ -111,11 +113,16 @@ def loss_landscape_anim(
 
 
 if __name__ == "__main__":
+    bs = 16
+    lr = 1e-3
+    datamodule = MNISTDataModule(batch_size=bs, n_examples=3000)
+    model = LeNet(learning_rate=lr)
+
     optim_path, loss_path, accu_path = loss_landscape_anim(
-        learning_rate=1e-3,
-        batch_size=16,
-        optimizer="adam",
         n_epochs=10,
+        model=model,
+        datamodule=datamodule,
+        optimizer="adam",
         giffps=15,
         seed=SEED,
         load_model=False,

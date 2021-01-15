@@ -7,12 +7,12 @@ from torch.utils.data import DataLoader, TensorDataset, Subset
 from torchvision import transforms
 from torchvision.datasets import MNIST
 
-SAMPLE_DATA_PATH = "./sample_data/data_2d_3class.p"
+SPIRALS_DATA_PATH = "./sample_data/spirals.p"
 
 
-class SampleDataModule(pl.LightningDataModule):
+class SpiralsDataModule(pl.LightningDataModule):
     def __init__(self, batch_size=None):
-        self.datadict = pickle.load(open(SAMPLE_DATA_PATH, "rb"))
+        self.datadict = pickle.load(open(SPIRALS_DATA_PATH, "rb"))
         self.input_dim = self.datadict["X_train"].shape[1]
         self.num_classes = len(set(self.datadict["y_train"]))
         self.X = torch.Tensor(self.datadict["X_train"])

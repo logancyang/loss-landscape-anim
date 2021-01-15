@@ -4,15 +4,41 @@
 
 Check out my article [Visualizing Optimization Trajectory of Neural Nets](https://towardsdatascience.com/from-animation-to-intuition-visualizing-optimization-trajectory-in-neural-nets-726e43a08d85?sk=dae85760fb921ecacddbe1af903e3c69) for more examples and some intuitive explanations.
 
-## 1. Basic Example
+## 1. Basic Examples
 
-With the provided dataset and the default multilayer perceptron `MLP` model, you can directly call `loss_landscape_anim` to get a sample animated GIF like this.
-
-<img src="/sample_images/sample_mlp_2l_50n.gif" alt="sample gif" align="middle"/>
+With the provided [spirals dataset](./sample_images/spirals-dataset.png) and the default multilayer perceptron `MLP` model, you can directly call `loss_landscape_anim` to get a sample animated GIF like this:
 
 ```py
-# TODO: Add example for python and cli using fastcore.script
+# Use default MLP model and sample spirals dataset
+loss_landscape_anim(n_epochs=300)
 ```
+
+<img src="/sample_images/sample_mlp_2l_50n.gif" alt="sample gif 1" align="middle"/>
+
+Here's another example – the LeNet5 convolutional network on the MNIST dataset. There are many levers you can tune: learning rate, batch size, epochs, frames per second of the GIF output, a seed for reproducible results, whether to load from a trained model, etc. Check out the function signature for more details.
+
+```py
+bs = 16
+lr = 1e-3
+datamodule = MNISTDataModule(batch_size=bs, n_examples=3000)
+model = LeNet(learning_rate=lr)
+
+# Optional return values if you need them
+optim_path, loss_steps, accu_steps = loss_landscape_anim(
+    n_epochs=10,
+    model=model,
+    datamodule=datamodule,
+    optimizer="adam",
+    giffps=15,
+    seed=SEED,
+    load_model=False,
+    output_to_file=True
+)
+```
+
+The output looks like this:
+
+<img src="/sample_images/lenet-1e-3.gif" alt="sample gif 2" align="middle"/>
 
 ## 2. Why PCA?
 
@@ -23,12 +49,25 @@ The optimization path almost always fall into a low-dimensional space <sup>[[1]]
 
 ## 4. Custom Dataset and Model
 
-1. Prepare your `DataModule`
-2. Define your custom model that inherits `model.GenericModel`.
-3. Call the function as shown below
+1. Prepare your `DataModule`. Refer to [datamodule.py](./loss_landscape_anim/datamodule.py) for examples.
+2. Define your custom model that inherits `model.GenericModel`. Refer to [model.py](./loss_landscape_anim/model.py) for examples.
+3. Once you correctly setup your custom `DataModule` and `model`, call the function as shown below to train the model and plot the loss landscape animation.
 
 ```py
-# TODO: Add example for custom dataset and model
+bs = ...
+lr = ...
+datamodule = YourDataModule(batch_size=bs)
+model = YourModel(learning_rate=lr)
+
+loss_landscape_anim(
+    n_epochs=10,
+    model=model,
+    datamodule=datamodule,
+    optimizer="adam",
+    seed=SEED,
+    load_model=False,
+    output_to_file=True
+)
 ```
 
 ## Reference
