@@ -1,8 +1,18 @@
 [tool.poetry]
 name = "loss-landscape-anim"
 version = "0.1.0"
-description = ""
-authors = ["Logan Yang <logancyang@gmail.com>"]
+description = "Animate the optimization trajectory of neural networks"
+authors = ["LoganYang <logancyang@gmail.com>"]
+keywords = [
+    "pytorch", "loss_landscape", "pytorch_lightning", "deep_learning", "visualization"
+]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/logancyang/loss-landscape-anim"
+repository = "https://github.com/logancyang/loss-landscape-anim"
+include = [
+    "LICENSE",
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
