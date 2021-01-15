@@ -6,14 +6,14 @@ Check out my article [Visualizing Optimization Trajectory of Neural Nets](https:
 
 ## 1. Basic Examples
 
-With the provided [spirals dataset](./sample_images/spirals-dataset.png) and the default multilayer perceptron `MLP` model, you can directly call `loss_landscape_anim` to get a sample animated GIF like this:
+With the provided [spirals dataset](https://github.com/logancyang/loss-landscape-anim/blob/master/sample_images/spirals-dataset.png) and the default multilayer perceptron `MLP` model, you can directly call `loss_landscape_anim` to get a sample animated GIF like this:
 
 ```py
 # Use default MLP model and sample spirals dataset
 loss_landscape_anim(n_epochs=300)
 ```
 
-<img src="/sample_images/sample_mlp_2l_50n.gif" alt="sample gif 1" align="middle"/>
+<img src="https://github.com/logancyang/loss-landscape-anim/blob/master/sample_images/sample_mlp_2l_50n.gif" alt="sample gif 1" align="middle"/>
 
 Here's another example – the LeNet5 convolutional network on the MNIST dataset. There are many levers you can tune: learning rate, batch size, epochs, frames per second of the GIF output, a seed for reproducible results, whether to load from a trained model, etc. Check out the function signature for more details.
 
@@ -38,7 +38,7 @@ optim_path, loss_steps, accu_steps = loss_landscape_anim(
 
 The output looks like this:
 
-<img src="/sample_images/lenet-1e-3.gif" alt="sample gif 2" align="middle"/>
+<img src="https://github.com/logancyang/loss-landscape-anim/blob/master/sample_images/lenet-1e-3.gif" alt="sample gif 2" align="middle"/>
 
 ## 2. Why PCA?
 
@@ -49,8 +49,8 @@ The optimization path almost always fall into a low-dimensional space <sup>[[1]]
 
 ## 4. Custom Dataset and Model
 
-1. Prepare your `DataModule`. Refer to [datamodule.py](./loss_landscape_anim/datamodule.py) for examples.
-2. Define your custom model that inherits `model.GenericModel`. Refer to [model.py](./loss_landscape_anim/model.py) for examples.
+1. Prepare your `DataModule`. Refer to [datamodule.py](https://github.com/logancyang/loss-landscape-anim/blob/master/loss_landscape_anim/datamodule.py) for examples.
+2. Define your custom model that inherits `model.GenericModel`. Refer to [model.py](https://github.com/logancyang/loss-landscape-anim/blob/master/loss_landscape_anim/model.py) for examples.
 3. Once you correctly setup your custom `DataModule` and `model`, call the function as shown below to train the model and plot the loss landscape animation.
 
 ```py
