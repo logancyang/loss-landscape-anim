@@ -29,7 +29,8 @@ def loss_landscape_anim(
     datamodule=None,
     model=None,
     optimizer="adam",
-    model_path="./checkpoints/model.pt",
+    model_dirpath="checkpoints/",
+    model_filename="model.pt",
     load_model=False,
     output_to_file=True,
     output_filename="sample.gif",
@@ -60,17 +61,24 @@ def loss_landscape_anim(
     train_loader = datamodule.train_dataloader()
 
     # Train model
+    model_dir = pathlib.Path(model_dirpath)
+    if not model_dir.is_dir():
+        (model_dir.parent / model_dirpath).mkdir(parents=True, exist_ok=True)
+        print(f"Model directory {model_dir.absolute()} does not exist, creating now.")
+    file_path = model_dirpath + model_filename
+
     if not load_model:
         trainer = pl.Trainer(progress_bar_refresh_rate=5, max_epochs=n_epochs)
         print(f"Training for {n_epochs} epochs...")
         trainer.fit(model, train_loader)
-        torch.save(model, model_path)
+        torch.save(model, file_path)
+        print(f"Model saved at {pathlib.Path(file_path).absolute()}.")
 
-    model_file = pathlib.Path(model_path)
+    model_file = pathlib.Path(file_path)
     if not model_file.is_file():
         raise Exception("Model file not found!")
 
-    model = torch.load(model_path)
+    model = torch.load(file_path)
     # Sample from full path
     sampled_optim_path = sample_frames(model.optim_path, max_frames=n_frames)
     optim_path, loss_path, accu_path = zip(

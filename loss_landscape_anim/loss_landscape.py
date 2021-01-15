@@ -1,3 +1,4 @@
+import pathlib
 import pickle
 
 import numpy as np
@@ -77,7 +78,7 @@ class LossGrid:
         if save_grid:
             loss_2d_tup = (self.loss_values_2d, self.argmin, self.loss_min)
             pickle.dump(loss_2d_tup, open(filepath, "wb"))
-            print("Loss grid saved to disk.")
+            print(f"Loss grid saved at {pathlib.Path(filepath).absolute()}.")
 
         self.loss_values_log_2d = np.log(self.loss_values_2d)
         self.coords = self.convert_coords(res, alpha)
