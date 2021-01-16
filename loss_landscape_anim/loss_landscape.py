@@ -35,7 +35,7 @@ class DimReduction:
     def _transform(self, model_params):
         npvectors = []
         for tensor in model_params:
-            npvectors.append(np.array(tensor))
+            npvectors.append(np.array(tensor.cpu()))
         return np.vstack(npvectors).T
 
 

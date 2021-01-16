@@ -87,7 +87,8 @@ loss_landscape_anim(
     optimizer="adam",
     seed=SEED,
     load_model=False,
-    output_to_file=True
+    output_to_file=True,
+    gpus=1  # Enable GPU training if available
 )
 ```
 

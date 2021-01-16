@@ -58,7 +58,10 @@ def loss_landscape_anim(
             num_classes=datamodule.num_classes,
             learning_rate=5e-3,
             optimizer=optimizer,
+            gpus=gpus
         )
+    else:
+        model.gpus = gpus
 
     train_loader = datamodule.train_dataloader()
 
@@ -68,6 +71,9 @@ def loss_landscape_anim(
         (model_dir.parent / model_dirpath).mkdir(parents=True, exist_ok=True)
         print(f"Model directory {model_dir.absolute()} does not exist, creating now.")
     file_path = model_dirpath + model_filename
+
+    if gpus > 0:
+        print(f"======== Using GPU for training ========")
 
     if not load_model:
         trainer = pl.Trainer(
@@ -122,3 +128,23 @@ def loss_landscape_anim(
     )
     if return_data:
         return list(optim_path), list(loss_path), list(accu_path)
+
+
+if __name__ == '__main__':
+    bs = 16
+    lr = 1e-3
+    datamodule = MNISTDataModule(batch_size=bs, n_examples=3000)
+    model = LeNet(learning_rate=lr)
+
+    # Optional return values if you need them
+    loss_landscape_anim(
+        n_epochs=10,
+        model=model,
+        datamodule=datamodule,
+        optimizer="adam",
+        giffps=15,
+        seed=SEED,
+        load_model=False,
+        output_to_file=True,
+        gpus=1
+    )

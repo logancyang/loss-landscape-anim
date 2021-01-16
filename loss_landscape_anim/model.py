@@ -6,11 +6,12 @@ from torch.optim import SGD, Adam
 
 
 class GenericModel(pl.LightningModule):
-    def __init__(self, optimizer, learning_rate, custom_optimizer=None):
+    def __init__(self, optimizer, learning_rate, custom_optimizer=None, gpus=0):
         super().__init__()
         self.learning_rate = learning_rate
         self.optimizer = optimizer
         self.custom_optimizer = custom_optimizer
+        self.gpus = gpus
         self.optim_path = []
         self.accuracy = pl.metrics.Accuracy()
 
@@ -32,6 +33,8 @@ class GenericModel(pl.LightningModule):
         """Get flattened and concatenated params of the model"""
         params = self._get_params()
         flat_params = torch.Tensor()
+        if torch.cuda.is_available() and self.gpus > 0:
+            flat_params = flat_params.cuda()
         for _, param in params.items():
             flat_params = torch.cat((flat_params, torch.flatten(param)))
         return flat_params
@@ -86,11 +89,13 @@ class MLP(GenericModel):
         hidden_dim=50,
         optimizer="adam",
         custom_optimizer=None,
+        gpus=0
     ):
         super().__init__(
             optimizer=optimizer,
             learning_rate=learning_rate,
             custom_optimizer=custom_optimizer,
+            gpus=gpus
         )
         # NOTE: nn.ModuleList is not the same as Sequential,
         # the former doesn't have forward implemented
@@ -156,8 +161,8 @@ class LeNet(GenericModel):
     LeNet-5 convolutional neural network
     """
 
-    def __init__(self, learning_rate, optimizer="adam", custom_optimizer=None):
-        super().__init__(optimizer, learning_rate, custom_optimizer)
+    def __init__(self, learning_rate, optimizer="adam", custom_optimizer=None, gpus=0):
+        super().__init__(optimizer, learning_rate, custom_optimizer, gpus=gpus)
         self.relu = nn.ReLU()
         self.pool = nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
         self.conv1 = nn.Conv2d(
