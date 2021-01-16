@@ -32,7 +32,8 @@ optim_path, loss_steps, accu_steps = loss_landscape_anim(
     giffps=15,
     seed=SEED,
     load_model=False,
-    output_to_file=True
+    output_to_file=True,
+    return_data=True
 )
 ```
 

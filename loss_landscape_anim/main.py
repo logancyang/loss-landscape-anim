@@ -38,6 +38,7 @@ def loss_landscape_anim(
     sampling=False,
     n_frames=300,
     seed=None,
+    return_data=False,
 ):
     if seed:
         torch.manual_seed(seed)
@@ -116,5 +117,5 @@ def loss_landscape_anim(
         output_to_file=output_to_file,
         filename=output_filename,
     )
-
-    return list(optim_path), list(loss_path), list(accu_path)
+    if return_data:
+        return list(optim_path), list(loss_path), list(accu_path)
