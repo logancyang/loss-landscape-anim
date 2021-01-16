@@ -128,22 +128,3 @@ def loss_landscape_anim(
     )
     if return_data:
         return list(optim_path), list(loss_path), list(accu_path)
-
-
-if __name__ == "__main__":
-    bs = 16
-    lr = 1e-3
-    datamodule = MNISTDataModule(batch_size=bs, n_examples=3000)
-    model = LeNet(learning_rate=lr)
-
-    # Optional return values if you need them
-    loss_landscape_anim(
-        n_epochs=10,
-        model=model,
-        datamodule=datamodule,
-        optimizer="adam",
-        giffps=15,
-        seed=SEED,
-        load_model=False,
-        output_to_file=True,
-    )

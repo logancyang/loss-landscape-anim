@@ -11,7 +11,7 @@ SEED = 180224
 
 
 def test_version():
-    assert __version__ == "0.1.6"
+    assert __version__ == "0.1.7"
 
 
 @fixture
