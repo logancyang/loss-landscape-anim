@@ -140,8 +140,14 @@ def animate_contour(
     ax.contourf(coords_x, coords_y, loss_grid, levels=35, alpha=0.9, cmap="YlGnBu")
 
     ax.set_title("Optimization in Loss Landscape")
-    ax.set_xlabel(f"principal component 0, {pcvariances[0]:.1%}")
-    ax.set_ylabel(f"principal component 1, {pcvariances[1]:.1%}")
+    xlabel_text = "direction 0"
+    ylabel_text = "direction 1"
+    if pcvariances is not None:
+        xlabel_text = f"principal component 0, {pcvariances[0]:.1%}"
+        ylabel_text = f"principal component 1, {pcvariances[1]:.1%}"
+
+    ax.set_xlabel(xlabel_text)
+    ax.set_ylabel(ylabel_text)
 
     W0 = param_steps[0]
     w1s = [W0[0]]
