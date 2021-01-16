@@ -26,8 +26,10 @@ With the provided [spirals dataset](https://github.com/logancyang/loss-landscape
 # Use default MLP model and sample spirals dataset
 loss_landscape_anim(n_epochs=300)
 ```
-
-<img src="https://github.com/logancyang/loss-landscape-anim/blob/master/sample_images/sample_mlp_2l_50n.gif" alt="sample gif 1" align="middle"/>
+<figure class="image">
+    <img src="https://github.com/logancyang/loss-landscape-anim/blob/master/sample_images/sample_mlp_2l_50n.gif" alt="sample gif 1" title="MLP with two 50-node hidden layers on the Spirals dataset" align="middle"/>
+    <figcaption>MLP with two 50-node hidden layers on the Spirals dataset</figcaption>
+</figure>
 
 Note: if you are using it in a notebook, don't forget to include the following at the top:
 
@@ -61,7 +63,10 @@ GPU training is supported. Just pass `gpus` into `loss_landscape_anim` if they a
 
 The output looks like this:
 
-<img src="https://github.com/logancyang/loss-landscape-anim/blob/master/sample_images/lenet-1e-3.gif" alt="sample gif 2" align="middle"/>
+<figure class="image">
+    <img src="https://github.com/logancyang/loss-landscape-anim/blob/master/sample_images/lenet-1e-3.gif" alt="sample gif 2" title="LeNet5 on the MNIST dataset" align="middle"/>
+    <figcaption>LeNet5 on the MNIST dataset</figcaption>
+<figure>
 
 ## 2. Why PCA?
 
@@ -69,6 +74,11 @@ The optimization path almost always fall into a low-dimensional space <sup>[[1]]
 
 ## 3. Custom Directions
 
+You can also set 2 fixed directions, either generated at random or handpicked.
+
+```py
+
+```
 
 ## 4. Custom Dataset and Model
 
