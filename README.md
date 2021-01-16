@@ -15,6 +15,12 @@ loss_landscape_anim(n_epochs=300)
 
 <img src="https://github.com/logancyang/loss-landscape-anim/blob/master/sample_images/sample_mlp_2l_50n.gif" alt="sample gif 1" align="middle"/>
 
+Note: if you are using it in a notebook, don't forget to include the following at the top:
+
+```py
+%matplotlib notebook
+```
+
 Here's another example – the LeNet5 convolutional network on the MNIST dataset. There are many levers you can tune: learning rate, batch size, epochs, frames per second of the GIF output, a seed for reproducible results, whether to load from a trained model, etc. Check out the function signature for more details.
 
 ```py

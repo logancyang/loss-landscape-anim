@@ -11,7 +11,7 @@ SEED = 180224
 
 
 def test_version():
-    assert __version__ == "0.1.0"
+    assert __version__ == "0.1.5"
 
 
 @fixture
@@ -40,7 +40,6 @@ def test_loss_grid(test_model, test_dataset):
         model=test_model,
         data=test_dataset.tensors,
         seed=SEED,
-        tqdm_disable=True,
     )
 
 

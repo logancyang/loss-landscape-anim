@@ -4,7 +4,6 @@ import pickle
 import numpy as np
 import torch
 from sklearn.decomposition import PCA
-from tqdm import tqdm
 
 RES = 50
 # Controls the margin from the optim starting point to the edge of the graph.
@@ -48,7 +47,6 @@ class LossGrid:
         data,
         seed,
         res=RES,
-        tqdm_disable=False,
         save_grid=True,
         load_grid=False,
         filepath="./checkpoints/lossgrid.p",
@@ -72,7 +70,7 @@ class LossGrid:
             print("Loss grid loaded from disk.")
         else:
             self.loss_values_2d, self.argmin, self.loss_min = self.compute_loss_2d(
-                model, data, tqdm_disable=tqdm_disable
+                model, data
             )
 
         if save_grid:
@@ -100,7 +98,7 @@ class LossGrid:
         assert (grid[res][res] == self.optim_point).all()
         return grid
 
-    def compute_loss_2d(self, model, data, tqdm_disable=False):
+    def compute_loss_2d(self, model, data):
         """
         Compute loss values for each weight vector in grid for the model
         and data
@@ -111,26 +109,33 @@ class LossGrid:
         m = len(self.params_grid[0])
         loss_min = float("inf")
         argmin = ()
-        print("Generating loss values for the contour plot...")
-        with tqdm(total=n * m, disable=tqdm_disable) as pbar:
-            for i in range(n):
-                loss_row = []
-                for j in range(m):
-                    w_ij = torch.Tensor(self.params_grid[i][j])
-                    # Load flattened weight vector into model
-                    model.init_from_flat_params(w_ij)
-                    y_pred = model(X)
-                    loss_val = model.loss_fn(y_pred, y).item()
-                    if loss_val < loss_min:
-                        loss_min = loss_val
-                        argmin = (i, j)
-                    loss_row.append(loss_val)
-                    pbar.update(1)
-                loss_2d.append(loss_row)
+        total_losses = n * m
+        count = 0
+        for i in range(n):
+            loss_row = []
+            for j in range(m):
+                w_ij = torch.Tensor(self.params_grid[i][j])
+                # Load flattened weight vector into model
+                model.init_from_flat_params(w_ij)
+                y_pred = model(X)
+                loss_val = model.loss_fn(y_pred, y).item()
+                if loss_val < loss_min:
+                    loss_min = loss_val
+                    argmin = (i, j)
+                loss_row.append(loss_val)
+                count += 1
+                print(
+                    "\r"
+                    + (
+                        "Calculating loss values for the contour plot: "
+                        f"{count}/{total_losses}..."
+                    ),
+                    end="",
+                )
+            loss_2d.append(loss_row)
         # This transpose below is very important for a correct contour plot because
         # originally in loss_2d, dir1 (y) is row-direction, dir0 (x) is column
         loss_2darray = np.array(loss_2d).T
-        print("Loss values generated.")
         return loss_2darray, argmin, loss_min
 
     def _convert_coord(self, i, ref_point_coord, alpha):
