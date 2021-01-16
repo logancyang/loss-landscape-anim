@@ -4,6 +4,20 @@
 
 Check out my article [Visualizing Optimization Trajectory of Neural Nets](https://towardsdatascience.com/from-animation-to-intuition-visualizing-optimization-trajectory-in-neural-nets-726e43a08d85?sk=dae85760fb921ecacddbe1af903e3c69) for more examples and some intuitive explanations.
 
+## 0. Installation
+
+From PyPI:
+
+```sh
+pip install loss-landscape-anim
+```
+
+From source, you need [Poetry](https://python-poetry.org/docs/#installation). Once you cloned this repo, run the command below to install the dependencies.
+
+```sh
+poetry install
+```
+
 ## 1. Basic Examples
 
 With the provided [spirals dataset](https://github.com/logancyang/loss-landscape-anim/blob/master/sample_images/spirals-dataset.png) and the default multilayer perceptron `MLP` model, you can directly call `loss_landscape_anim` to get a sample animated GIF like this:
