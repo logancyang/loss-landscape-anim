@@ -22,8 +22,7 @@ class DimReduction:
         pca = PCA(n_components=2, random_state=self.seed)
         optim_path = self.matrix_to_reduce.T
         n_steps, _ = optim_path.shape
-        pca.fit(optim_path)
-        path_2d = pca.transform(optim_path)
+        path_2d = pca.fit_transform(optim_path)
         reduced_dirs = pca.components_
         assert path_2d.shape == (n_steps, 2)
         return {
