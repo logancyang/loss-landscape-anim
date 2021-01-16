@@ -43,7 +43,6 @@ lr = 1e-3
 datamodule = MNISTDataModule(batch_size=bs, n_examples=3000)
 model = LeNet(learning_rate=lr)
 
-# Optional return values if you need them
 optim_path, loss_steps, accu_steps = loss_landscape_anim(
     n_epochs=10,
     model=model,
@@ -53,9 +52,12 @@ optim_path, loss_steps, accu_steps = loss_landscape_anim(
     seed=SEED,
     load_model=False,
     output_to_file=True,
-    return_data=True
+    return_data=True,  # Optional return values if you need them
+    gpus=1  # Enable GPU training if available
 )
 ```
+
+GPU training is supported. Just pass `gpus` into `loss_landscape_anim` if they are available.
 
 The output looks like this:
 
@@ -87,8 +89,7 @@ loss_landscape_anim(
     optimizer="adam",
     seed=SEED,
     load_model=False,
-    output_to_file=True,
-    gpus=1  # Enable GPU training if available
+    output_to_file=True
 )
 ```
 
