@@ -31,6 +31,7 @@ def loss_landscape_anim(
     optimizer="adam",
     model_dirpath="checkpoints/",
     model_filename="model.pt",
+    gpus=0,
     load_model=False,
     output_to_file=True,
     output_filename="sample.gif",
@@ -69,7 +70,9 @@ def loss_landscape_anim(
     file_path = model_dirpath + model_filename
 
     if not load_model:
-        trainer = pl.Trainer(progress_bar_refresh_rate=5, max_epochs=n_epochs)
+        trainer = pl.Trainer(
+            progress_bar_refresh_rate=5, max_epochs=n_epochs, gpus=gpus
+        )
         print(f"Training for {n_epochs} epochs...")
         trainer.fit(model, train_loader)
         torch.save(model, file_path)
