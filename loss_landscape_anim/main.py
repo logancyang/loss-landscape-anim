@@ -58,7 +58,7 @@ def loss_landscape_anim(
             num_classes=datamodule.num_classes,
             learning_rate=5e-3,
             optimizer=optimizer,
-            gpus=gpus
+            gpus=gpus,
         )
     else:
         model.gpus = gpus
@@ -130,7 +130,7 @@ def loss_landscape_anim(
         return list(optim_path), list(loss_path), list(accu_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     bs = 16
     lr = 1e-3
     datamodule = MNISTDataModule(batch_size=bs, n_examples=3000)
@@ -146,5 +146,4 @@ if __name__ == '__main__':
         seed=SEED,
         load_model=False,
         output_to_file=True,
-        gpus=1
     )

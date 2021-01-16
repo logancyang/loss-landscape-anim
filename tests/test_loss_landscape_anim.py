@@ -40,6 +40,7 @@ def test_loss_grid(test_model, test_dataset):
         model=test_model,
         data=test_dataset.tensors,
         seed=SEED,
+        tqdm_disable=True,
     )
 
 
