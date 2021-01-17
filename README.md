@@ -82,9 +82,10 @@ For 2 fixed directions of your choosing, set `reduction_method` to `"custom"`, e
 ```py
 import numpy as np
 
-u_gen = np.random.normal(size=303)
+n_params = ... # number of parameters your model has
+u_gen = np.random.normal(size=n_params)
 u = u_gen / np.linalg.norm(u_gen)
-v_gen = np.random.normal(size=303)
+v_gen = np.random.normal(size=n_params)
 v = v_gen / np.linalg.norm(v_gen)
 
 loss_landscape_anim(
