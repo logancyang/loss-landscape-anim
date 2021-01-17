@@ -3,7 +3,7 @@ from .model import GenericModel, MLP, LeNet
 from .loss_landscape import LossGrid
 from .datamodule import SpiralsDataModule, MNISTDataModule
 
-__version__ = "0.1.8"
+__version__ = "0.1.9"
 
 __all__ = [
     "loss_landscape_anim",
