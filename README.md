@@ -1,5 +1,9 @@
 # Animating the Optimization Trajectory of Neural Nets
 
+[![PyPi Latest Release](https://img.shields.io/pypi/v/loss-landscape-anim)](https://pypi.org/project/loss-landscape-anim/)
+[![Release](https://img.shields.io/github/v/release/logancyang/loss-landscape-anim.svg)](https://github.com/logancyang/loss-landscape-anim/releases)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 `loss-landscape-anim` lets you create animated optimization path in a 2D slice of the loss landscape of your neural networks. It is based on [PyTorch Lightning](https://github.com/PyTorchLightning/pytorch-lightning), please follow its suggested style if you want to add your own model.
 
 Check out my article [Visualizing Optimization Trajectory of Neural Nets](https://towardsdatascience.com/from-animation-to-intuition-visualizing-optimization-trajectory-in-neural-nets-726e43a08d85?sk=dae85760fb921ecacddbe1af903e3c69) for more examples and some intuitive explanations.
