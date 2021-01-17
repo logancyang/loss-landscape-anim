@@ -13,31 +13,89 @@ MARGIN = 0.3
 
 
 class DimReduction:
-    def __init__(self, params_path, seed):
+    def __init__(self, params_path, reduction_method, custom_directions, seed):
         """params_path: List of params from each optimization step"""
-        self.matrix_to_reduce = self._transform(params_path)
+        self.optim_path_matrix = self._transform(params_path)
+        self.n_steps, self.n_dim = self.optim_path_matrix.shape
+        self.custom_directions = custom_directions
+        self.reduction_method = reduction_method
         self.seed = seed
+
+    def reduce(self):
+        if self.reduction_method == "pca":
+            return self.pca()
+        elif self.reduction_method == "random":
+            return self.reduce_to_random_directions()
+        elif self.reduction_method == "custom":
+            return self.reduce_to_custom_directions()
+        else:
+            raise Exception(f"Unrecognized reduction method {self.reduction_method}")
 
     def pca(self):
         pca = PCA(n_components=2, random_state=self.seed)
-        optim_path = self.matrix_to_reduce.T
-        n_steps, _ = optim_path.shape
-        pca.fit(optim_path)
-        path_2d = pca.transform(optim_path)
+        path_2d = pca.fit_transform(self.optim_path_matrix)
         reduced_dirs = pca.components_
-        assert path_2d.shape == (n_steps, 2)
+        assert path_2d.shape == (self.n_steps, 2)
         return {
-            "optim_path": optim_path,
+            "optim_path": self.optim_path_matrix,
             "path_2d": path_2d,
             "reduced_dirs": reduced_dirs,
             "pcvariances": pca.explained_variance_ratio_,
+        }
+
+    def reduce_to_random_directions(self):
+        """
+        Produce 2 random flat unit vectors of dim <dim_params> as the directions.
+        Since 2 high-dimensional vectors are almost always orthogonal,
+        it's no problem to use them as the axes for the 2D slice of
+        loss landscape.
+        """
+        print("Generating random axes...")
+        # Generate 2 random unit vectors (u, v)
+        if self.seed:
+            print(f"seed={self.seed}")
+            np.random.seed(self.seed)
+        u_gen = np.random.normal(size=self.n_dim)
+        u = u_gen / np.linalg.norm(u_gen)
+        v_gen = np.random.normal(size=self.n_dim)
+        v = v_gen / np.linalg.norm(v_gen)
+        return self._project(np.array([u, v]))
+
+    def reduce_to_custom_directions(self):
+        """
+        Manually pick two direction vectors dir0, dir1 of dim <dim_params>
+        and use them as the axes for the 2D slice of loss landscape.
+        """
+        print("Using custom axes...")
+        dir0, dir1 = self.custom_directions
+        dir0_exists = dir0 is not None
+        dir1_exists = dir1 is not None
+        if not (dir0_exists and dir1_exists):
+            raise Exception(
+                "Custom directions not provided, please provide 2 vectors of "
+                f"dim={self.n_dim}"
+            )
+        # Normalize given direction vectors
+        u = dir0 / np.linalg.norm(dir0)
+        v = dir1 / np.linalg.norm(dir1)
+        # Transform all step params into the coordinates of (u, v)
+        return self._project(np.array([u, v]))
+
+    def _project(self, reduced_dirs):
+        """Project self.optim_path_matrix onto (u, v)"""
+        path_projection = self.optim_path_matrix.dot(reduced_dirs.T)
+        assert path_projection.shape == (self.n_steps, 2)
+        return {
+            "optim_path": self.optim_path_matrix,
+            "path_2d": path_projection,
+            "reduced_dirs": reduced_dirs,
         }
 
     def _transform(self, model_params):
         npvectors = []
         for tensor in model_params:
             npvectors.append(np.array(tensor.cpu()))
-        return np.vstack(npvectors).T
+        return np.vstack(npvectors)
 
 
 class LossGrid:
@@ -46,21 +104,18 @@ class LossGrid:
         optim_path,
         model,
         data,
-        seed,
+        path_2d,
+        directions,
         res=RES,
         tqdm_disable=False,
         save_grid=True,
         load_grid=False,
         filepath="./checkpoints/lossgrid.p",
     ):
-        dim_reduction = DimReduction(params_path=optim_path, seed=seed)
-        reduced_dict = dim_reduction.pca()
-
-        self.optim_point = reduced_dict["optim_path"][-1]
-        self.optim_point_2d = reduced_dict["path_2d"][-1]
-        self.path_2d = reduced_dict["path_2d"]
-        self.dir0, self.dir1 = reduced_dict["reduced_dirs"]
-        self.pcvariances = reduced_dict["pcvariances"]
+        self.dir0, self.dir1 = directions
+        self.path_2d = path_2d
+        self.optim_point = optim_path[-1]
+        self.optim_point_2d = path_2d[-1]
 
         alpha = self._compute_stepsize(res)
         self.params_grid = self.build_params_grid(res, alpha)
@@ -116,7 +171,7 @@ class LossGrid:
             for i in range(n):
                 loss_row = []
                 for j in range(m):
-                    w_ij = torch.Tensor(self.params_grid[i][j])
+                    w_ij = torch.Tensor(self.params_grid[i][j].float())
                     # Load flattened weight vector into model
                     model.init_from_flat_params(w_ij)
                     y_pred = model(X)
