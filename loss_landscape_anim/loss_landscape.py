@@ -149,10 +149,10 @@ class LossGrid:
         for i in range(-res, res):
             row = []
             for j in range(-res, res):
-                w_new = self.optim_point + i * alpha * self.dir0 + j * alpha * self.dir1
+                w_new = self.optim_point.cpu() + i * alpha * self.dir0 + j * alpha * self.dir1
                 row.append(w_new)
             grid.append(row)
-        assert (grid[res][res] == self.optim_point).all()
+        assert (grid[res][res] == self.optim_point.cpu()).all()
         return grid
 
     def compute_loss_2d(self, model, data, tqdm_disable=False):
