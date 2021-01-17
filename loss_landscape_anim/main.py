@@ -26,6 +26,7 @@ def loss_landscape_anim(
     datamodule=None,
     model=None,
     optimizer="adam",
+    reduction_method="pca",  # "pca", "random", "custom" are supported
     custom_directions=None,
     model_dirpath="checkpoints/",
     model_filename="model.pt",
@@ -99,9 +100,7 @@ def loss_landscape_anim(
     print(f"\n# sampled steps in optimization path: {len(optim_path)}")
 
     """Dimensionality reduction and Loss Grid"""
-
-    # 'pca', 'random' and 'custom' are supported
-    reduction_method = "pca"
+    print(f"Dimensionality reduction method specified: {reduction_method}")
     dim_reduction = DimReduction(
         params_path=optim_path,
         reduction_method=reduction_method,
@@ -111,7 +110,7 @@ def loss_landscape_anim(
     reduced_dict = dim_reduction.reduce()
     path_2d = reduced_dict["path_2d"]
     directions = reduced_dict["reduced_dirs"]
-    pcvariances = reduced_dict["pcvariances"]
+    pcvariances = reduced_dict.get("pcvariances")
 
     loss_grid = LossGrid(
         optim_path=optim_path,
@@ -119,21 +118,17 @@ def loss_landscape_anim(
         data=datamodule.dataset.tensors,
         path_2d=path_2d,
         directions=directions,
-        explained_variances=pcvariances,
     )
 
-    loss_log_2d = loss_grid.loss_values_log_2d
-    steps = loss_grid.path_2d.tolist()
-
     animate_contour(
-        param_steps=steps,
+        param_steps=path_2d.tolist(),
         loss_steps=loss_path,
         acc_steps=accu_path,
-        loss_grid=loss_log_2d,
+        loss_grid=loss_grid.loss_values_log_2d,
         coords=loss_grid.coords,
         true_optim_point=loss_grid.true_optim_point,
         true_optim_loss=loss_grid.loss_min,
-        pcvariances=loss_grid.pcvariances,
+        pcvariances=pcvariances,
         giffps=giffps,
         sampling=sampling,
         output_to_file=output_to_file,

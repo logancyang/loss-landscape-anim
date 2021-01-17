@@ -52,11 +52,14 @@ class DimReduction:
         """
         print("Generating random axes...")
         # Generate 2 random unit vectors (u, v)
+        if self.seed:
+            print(f"seed={self.seed}")
+            np.random.seed(self.seed)
         u_gen = np.random.normal(size=self.n_dim)
         u = u_gen / np.linalg.norm(u_gen)
         v_gen = np.random.normal(size=self.n_dim)
         v = v_gen / np.linalg.norm(v_gen)
-        return self._project((u, v))
+        return self._project(np.array([u, v]))
 
     def reduce_to_custom_directions(self):
         """
@@ -76,13 +79,12 @@ class DimReduction:
         u = dir0 / np.linalg.norm(dir0)
         v = dir1 / np.linalg.norm(dir1)
         # Transform all step params into the coordinates of (u, v)
-        return self._project((u, v))
+        return self._project(np.array([u, v]))
 
     def _project(self, reduced_dirs):
         """Project self.optim_path_matrix onto (u, v)"""
-        matrix_to_project = self.optim_path_matrix.T  # transpose to (n_dim, n_step)
-        path_projection = matrix_to_project.dot(reduced_dirs)
-        assert path_projection.shape == (self.n_dim, 2)
+        path_projection = self.optim_path_matrix.dot(reduced_dirs.T)
+        assert path_projection.shape == (self.n_steps, 2)
         return {
             "optim_path": self.optim_path_matrix,
             "path_2d": path_projection,
@@ -104,7 +106,6 @@ class LossGrid:
         data,
         path_2d,
         directions,
-        explained_variances=None,
         res=RES,
         tqdm_disable=False,
         save_grid=True,
@@ -113,7 +114,6 @@ class LossGrid:
     ):
         self.dir0, self.dir1 = directions
         self.path_2d = path_2d
-        self.pcvariances = explained_variances
         self.optim_point = optim_path[-1]
         self.optim_point_2d = path_2d[-1]
 
@@ -171,7 +171,7 @@ class LossGrid:
             for i in range(n):
                 loss_row = []
                 for j in range(m):
-                    w_ij = torch.Tensor(self.params_grid[i][j])
+                    w_ij = torch.Tensor(self.params_grid[i][j].float())
                     # Load flattened weight vector into model
                     model.init_from_flat_params(w_ij)
                     y_pred = model(X)
