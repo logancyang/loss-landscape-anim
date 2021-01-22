@@ -29,6 +29,4 @@ if __name__ == "__main__":
         output_to_file=True,
         gpus=0,  # Set to # gpus if available
     )
-
-    loss_landscape_anim(n_epochs=300)
     """
