@@ -13,39 +13,39 @@ MARGIN = 0.3
 
 
 class DimReduction:
-    def __init__(self, params_path, reduction_method, custom_directions, seed):
+    def __init__(self, reduction_method, custom_directions, seed):
         """params_path: List of params from each optimization step"""
-        self.optim_path_matrix = self._transform(params_path)
-        self.n_steps, self.n_dim = self.optim_path_matrix.shape
         self.custom_directions = custom_directions
         self.reduction_method = reduction_method
         self.seed = seed
 
-    def reduce(self):
+    def reduce(self, params_path):
+        optim_path_matrix = self._transform(params_path)
         if self.reduction_method == "pca":
-            return self.pca()
+            return self.pca(optim_path_matrix)
         elif self.reduction_method == "random":
-            return self.reduce_to_random_directions()
+            return self.reduce_to_random_directions(optim_path_matrix)
         elif self.reduction_method == "custom":
-            return self.reduce_to_custom_directions()
+            return self.reduce_to_custom_directions(optim_path_matrix)
         else:
             raise Exception(f"Unrecognized reduction method {self.reduction_method}")
 
-    def pca(self):
+    def pca(self, optim_path_matrix):
         pca = PCA(n_components=2, random_state=self.seed)
-        path_2d = pca.fit_transform(self.optim_path_matrix)
+        path_2d = pca.fit_transform(optim_path_matrix)
         reduced_dirs = pca.components_
-        assert path_2d.shape == (self.n_steps, 2)
+        assert path_2d.shape == (optim_path_matrix.shape[0], 2)
         return {
-            "optim_path": self.optim_path_matrix,
+            "optim_path": optim_path_matrix,
             "path_2d": path_2d,
             "reduced_dirs": reduced_dirs,
             "pcvariances": pca.explained_variance_ratio_,
         }
 
-    def reduce_to_random_directions(self):
+    def reduce_to_random_directions(self, optim_path_matrix):
         """
-        Produce 2 random flat unit vectors of dim <dim_params> as the directions.
+        Produce 2 random flat unit vectors of dim <dim_params> as the directions
+        and project the network params to them.
         Since 2 high-dimensional vectors are almost always orthogonal,
         it's no problem to use them as the axes for the 2D slice of
         loss landscape.
@@ -55,13 +55,13 @@ class DimReduction:
         if self.seed:
             print(f"seed={self.seed}")
             np.random.seed(self.seed)
-        u_gen = np.random.normal(size=self.n_dim)
+        u_gen = np.random.normal(size=optim_path_matrix.shape[0])
         u = u_gen / np.linalg.norm(u_gen)
-        v_gen = np.random.normal(size=self.n_dim)
+        v_gen = np.random.normal(size=optim_path_matrix.shape[0])
         v = v_gen / np.linalg.norm(v_gen)
-        return self._project(np.array([u, v]))
+        return self.project(optim_path_matrix, np.array([u, v]))
 
-    def reduce_to_custom_directions(self):
+    def reduce_to_custom_directions(self, optim_path_matrix):
         """
         Manually pick two direction vectors dir0, dir1 of dim <dim_params>
         and use them as the axes for the 2D slice of loss landscape.
@@ -73,20 +73,20 @@ class DimReduction:
         if not (dir0_exists and dir1_exists):
             raise Exception(
                 "Custom directions not provided, please provide 2 vectors of "
-                f"dim={self.n_dim}"
+                f"dim={optim_path_matrix.shape[0]}"
             )
         # Normalize given direction vectors
         u = dir0 / np.linalg.norm(dir0)
         v = dir1 / np.linalg.norm(dir1)
         # Transform all step params into the coordinates of (u, v)
-        return self._project(np.array([u, v]))
+        return self.project(optim_path_matrix, np.array([u, v]))
 
-    def _project(self, reduced_dirs):
-        """Project self.optim_path_matrix onto (u, v)"""
-        path_projection = self.optim_path_matrix.dot(reduced_dirs.T)
-        assert path_projection.shape == (self.n_steps, 2)
+    def project(self, optim_path_matrix, reduced_dirs):
+        """Project optim_path_matrix onto (u, v)"""
+        path_projection = optim_path_matrix.dot(reduced_dirs.T)
+        assert path_projection.shape == (optim_path_matrix.shape[0], 2)
         return {
-            "optim_path": self.optim_path_matrix,
+            "optim_path": optim_path_matrix,
             "path_2d": path_projection,
             "reduced_dirs": reduced_dirs,
         }
@@ -149,7 +149,11 @@ class LossGrid:
         for i in range(-res, res):
             row = []
             for j in range(-res, res):
-                w_new = self.optim_point.cpu() + i * alpha * self.dir0 + j * alpha * self.dir1
+                w_new = (
+                    self.optim_point.cpu()
+                    + i * alpha * self.dir0
+                    + j * alpha * self.dir1
+                )
                 row.append(w_new)
             grid.append(row)
         assert (grid[res][res] == self.optim_point.cpu()).all()

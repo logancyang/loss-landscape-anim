@@ -17,6 +17,8 @@ class GenericModel(pl.LightningModule):
 
     def configure_optimizers(self):
         if self.custom_optimizer:
+            # TODO: Try this out
+            self.optimizer = str(self.custom_optimizer)
             return self.custom_optimizer(self.parameters(), self.learning_rate)
         elif self.optimizer == "adam":
             return Adam(self.parameters(), self.learning_rate)
@@ -89,13 +91,13 @@ class MLP(GenericModel):
         hidden_dim=50,
         optimizer="adam",
         custom_optimizer=None,
-        gpus=0
+        gpus=0,
     ):
         super().__init__(
             optimizer=optimizer,
             learning_rate=learning_rate,
             custom_optimizer=custom_optimizer,
-            gpus=gpus
+            gpus=gpus,
         )
         # NOTE: nn.ModuleList is not the same as Sequential,
         # the former doesn't have forward implemented

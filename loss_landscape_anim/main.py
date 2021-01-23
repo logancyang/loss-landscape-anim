@@ -32,6 +32,7 @@ def loss_landscape_anim(
     model_filename="model.pt",
     gpus=0,
     load_model=False,
+    make_plot=True,
     output_to_file=True,
     output_filename="sample.gif",
     giffps=15,
@@ -100,14 +101,15 @@ def loss_landscape_anim(
     print(f"\n# sampled steps in optimization path: {len(optim_path)}")
 
     """Dimensionality reduction and Loss Grid"""
+    # TODO: DimReduction gives directions, and one path. Need to be able to
+    # get different paths from different models.
     print(f"Dimensionality reduction method specified: {reduction_method}")
     dim_reduction = DimReduction(
-        params_path=optim_path,
         reduction_method=reduction_method,
         custom_directions=custom_directions,
         seed=seed,
     )
-    reduced_dict = dim_reduction.reduce()
+    reduced_dict = dim_reduction.reduce(optim_path)
     path_2d = reduced_dict["path_2d"]
     directions = reduced_dict["reduced_dirs"]
     pcvariances = reduced_dict.get("pcvariances")
@@ -120,19 +122,30 @@ def loss_landscape_anim(
         directions=directions,
     )
 
-    animate_contour(
-        param_steps=path_2d.tolist(),
-        loss_steps=loss_path,
-        acc_steps=accu_path,
-        loss_grid=loss_grid.loss_values_log_2d,
-        coords=loss_grid.coords,
-        true_optim_point=loss_grid.true_optim_point,
-        true_optim_loss=loss_grid.loss_min,
-        pcvariances=pcvariances,
-        giffps=giffps,
-        sampling=sampling,
-        output_to_file=output_to_file,
-        filename=output_filename,
-    )
+    if make_plot:
+        animate_contour(
+            param_steps=path_2d.tolist(),
+            loss_steps=loss_path,
+            acc_steps=accu_path,
+            loss_grid=loss_grid.loss_values_log_2d,
+            coords=loss_grid.coords,
+            true_optim_point=loss_grid.true_optim_point,
+            true_optim_loss=loss_grid.loss_min,
+            pcvariances=pcvariances,
+            giffps=giffps,
+            sampling=sampling,
+            output_to_file=output_to_file,
+            filename=output_filename,
+        )
+
     if return_data:
         return list(optim_path), list(loss_path), list(accu_path)
+
+
+def compare_optimizers(model_paths):
+    """
+    Make one plot to compare the paths of different optimizers. Load from pretrained
+    models. Each pretrained model has info on what optimizer it used in model.optimizer
+    """
+    # Try loading models, getting the paths one by one
+    # Set the directions
