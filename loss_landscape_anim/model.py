@@ -2,7 +2,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 from torch import nn
-from torch.optim import SGD, Adam
+from torch.optim import SGD, Adam, Adagrad, RMSprop
 
 
 class GenericModel(pl.LightningModule):
@@ -17,17 +17,19 @@ class GenericModel(pl.LightningModule):
 
     def configure_optimizers(self):
         if self.custom_optimizer:
-            # TODO: Try this out
             self.optimizer = str(self.custom_optimizer)
             return self.custom_optimizer(self.parameters(), self.learning_rate)
         elif self.optimizer == "adam":
             return Adam(self.parameters(), self.learning_rate)
         elif self.optimizer == "sgd":
             return SGD(self.parameters(), self.learning_rate)
+        elif self.optimizer == "adagrad":
+            return Adagrad(self.parameters(), self.learning_rate)
+        elif self.optimizer == "rmsprop":
+            return RMSprop(self.parameters(), self.learning_rate)
         else:
             raise Exception(
-                f"custom_optimizer supplied is not supported, "
-                f"try torch.optim.Adam or torch.optim.SGD: "
+                f"custom_optimizer supplied is not supported: "
                 f"{self.custom_optimizer}"
             )
 
