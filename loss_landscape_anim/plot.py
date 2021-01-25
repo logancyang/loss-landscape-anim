@@ -183,7 +183,7 @@ def animate_contour(
     # NOTE: anim must be global for the the animation to work
     global anim
     anim = FuncAnimation(
-        fig, animate, frames=len(param_steps), interval=100, blit=False, repeat=False
+        fig, animate, frames=n_frames, interval=100, blit=False, repeat=False
     )
 
     if output_to_file:
@@ -192,6 +192,79 @@ def animate_contour(
             f"./{filename}",
             writer="imagemagick",
             fps=giffps,
+            progress_callback=_animate_progress,
+        )
+        print(f"\n{filename} created successfully.")
+    else:
+        plt.ioff()
+        plt.show()
+
+
+def animate_paths(
+    optim_paths_2d,
+    loss_grid,
+    coords,
+    true_optim_point,
+    figsize=(9, 6),
+    output_to_file=True,
+    filename="test_paths.gif",
+):
+    n_frames = len(optim_paths_2d[0])
+    print(f"\nTotal frames to process: {n_frames}")
+
+    fig, ax = plt.subplots(figsize=figsize)
+    coords_x, coords_y = coords
+    ax.contourf(coords_x, coords_y, loss_grid, levels=35, alpha=0.9, cmap="YlGnBu")
+
+    ax.set_title("Optimizers in Loss Landscape")
+    xlabel_text = "direction 0"
+    ylabel_text = "direction 1"
+
+    ax.set_xlabel(xlabel_text)
+    ax.set_ylabel(ylabel_text)
+    (optim_point,) = ax.plot(
+        true_optim_point[0], true_optim_point[1], "bx", label="target local minimum"
+    )
+    plt.legend(loc="upper right")
+
+    step_text = ax.text(
+        0.05, 0.9, "", fontsize=10, ha="left", va="center", transform=ax.transAxes
+    )
+
+    colors = ["r", "g", "y", "m"]
+    points = [None] * len(colors)
+    pathlines = [None] * len(colors)
+    optim_w1s = [None] * len(colors)
+    optim_w2s = [None] * len(colors)
+    for i, optim_path in enumerate(optim_paths_2d):
+        W0 = optim_path[0]
+        optim_w1s[i] = [W0[0]]
+        optim_w2s[i] = [W0[1]]
+        (pathlines[i],) = ax.plot(optim_w1s[i], optim_w2s[i], color=colors[i], lw=1)
+        (points[i],) = ax.plot(W0[0], W0[1], colors[i] + "o")
+
+    def animate(frame):
+        step_text.set_text(f"step: {frame}")
+        for i, optim_path in enumerate(optim_paths_2d):
+            W = optim_path[frame]
+            optim_w1s[i].append(W[0])
+            optim_w2s[i].append(W[1])
+            pathlines[i].set_data(optim_w1s[i], optim_w2s[i])
+            points[i].set_data(W[0], W[1])
+
+    # Call the animator. blit=True means only re-draw the parts that have changed.
+    # NOTE: anim must be global for the the animation to work
+    global anim
+    anim = FuncAnimation(
+        fig, animate, frames=n_frames, interval=100, blit=False, repeat=False
+    )
+
+    if output_to_file:
+        print(f"Writing {filename}.")
+        anim.save(
+            f"./{filename}",
+            writer="imagemagick",
+            fps=15,
             progress_callback=_animate_progress,
         )
         print(f"\n{filename} created successfully.")
