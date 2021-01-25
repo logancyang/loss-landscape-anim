@@ -201,6 +201,7 @@ def animate_contour(
 
 
 def animate_paths(
+    optimizers,
     optim_paths_2d,
     loss_grid,
     coords,
@@ -225,13 +226,13 @@ def animate_paths(
     (optim_point,) = ax.plot(
         true_optim_point[0], true_optim_point[1], "bx", label="target local minimum"
     )
-    plt.legend(loc="upper right")
 
     step_text = ax.text(
         0.05, 0.9, "", fontsize=10, ha="left", va="center", transform=ax.transAxes
     )
 
     colors = ["r", "g", "y", "m"]
+    labels = optimizers
     points = [None] * len(colors)
     pathlines = [None] * len(colors)
     optim_w1s = [None] * len(colors)
@@ -240,8 +241,12 @@ def animate_paths(
         W0 = optim_path[0]
         optim_w1s[i] = [W0[0]]
         optim_w2s[i] = [W0[1]]
-        (pathlines[i],) = ax.plot(optim_w1s[i], optim_w2s[i], color=colors[i], lw=1)
+        (pathlines[i],) = ax.plot(
+            optim_w1s[i], optim_w2s[i], color=colors[i], lw=1, label=labels[i]
+        )
         (points[i],) = ax.plot(W0[0], W0[1], colors[i] + "o")
+
+    plt.legend(loc="upper right")
 
     def animate(frame):
         step_text.set_text(f"step: {frame}")

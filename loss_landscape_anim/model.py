@@ -44,7 +44,7 @@ class GenericModel(pl.LightningModule):
         return flat_params
 
     def init_from_flat_params(self, flat_params):
-        """Set all model parameters from flattened and concat version"""
+        """Set all model parameters from flattened and concat version."""
         if not isinstance(flat_params, torch.Tensor):
             raise AttributeError(
                 "Argument to init_from_flat_params() must be torch.Tensor"
@@ -52,6 +52,9 @@ class GenericModel(pl.LightningModule):
         shapes = self._get_param_shapes()
         state_dict = self._unflatten_to_state_dict(flat_params, shapes)
         self.load_state_dict(state_dict, strict=True)
+
+    def get_param_count(self):
+        return sum(p.numel() for p in self.parameters())
 
     def _get_param_shapes(self):
         shapes = []

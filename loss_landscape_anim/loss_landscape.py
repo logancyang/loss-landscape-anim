@@ -50,7 +50,6 @@ class DimReduction:
         it's no problem to use them as the axes for the 2D slice of
         loss landscape.
         """
-        print("Generating random axes...")
         # Generate 2 random unit vectors (u, v)
         if self.seed:
             print(f"seed={self.seed}")
@@ -66,7 +65,6 @@ class DimReduction:
         Manually pick two direction vectors dir0, dir1 of dim <dim_params>
         and use them as the axes for the 2D slice of loss landscape.
         """
-        print("Using custom axes...")
         dir0, dir1 = self.custom_directions
         dir0_exists = dir0 is not None
         dir1_exists = dir1 is not None

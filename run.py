@@ -9,7 +9,7 @@ from loss_landscape_anim import (
 
 if __name__ == "__main__":
     optimizers = ["adam", "sgd", "adagrad", "rmsprop"]
-    compare_optimizers(optimizers, train_models=False)
+    compare_optimizers(optimizers, param_count=603, train_new=False, seed=180224)
 
     # loss_landscape_anim(n_epochs=300)
 

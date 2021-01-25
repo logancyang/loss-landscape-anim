@@ -26,13 +26,15 @@ def train_models(
     if not datamodule:
         datamodule = SpiralsDataModule()
 
+    param_count = None
+
     # Train models
     for i, optimizer in enumerate(optimizers):
         print(f"\nTraining MLP with {optimizer}\n")
         model = MLP(
             input_dim=datamodule.input_dim,
             num_classes=datamodule.num_classes,
-            num_hidden_layers=5,
+            num_hidden_layers=1,
             hidden_dim=100,
             learning_rate=learning_rate,
             optimizer=optimizer,
@@ -49,7 +51,10 @@ def train_models(
         file_path = f"./{model_dirpath}/model_{optimizer}_{i}.pt"
         torch.save(model, file_path)
         print(f"Model saved at {pathlib.Path(file_path).absolute()}.")
+        if not param_count:
+            param_count = model.get_param_count()
     print("All models trained successfully.")
+    return param_count
 
 
 def get_optimizer_paths(
@@ -106,6 +111,7 @@ def plot_optimizers(
         raise Exception("Model file not found!")
     model = torch.load(model_path)
 
+    assert model.get_param_count() == custom_directions[0].shape[0]
     # path_2d is needed only to set margin for loss grid
     path_2d = optim_paths_dict[optimizers[0]]["path_2d"]
     loss_grid = LossGrid(
@@ -121,6 +127,7 @@ def plot_optimizers(
     ]
 
     animate_paths(
+        optimizers=optimizers,
         optim_paths_2d=optim_paths_2d,
         loss_grid=loss_grid.loss_values_log_2d,
         coords=loss_grid.coords,
@@ -128,23 +135,32 @@ def plot_optimizers(
     )
 
 
-def compare_optimizers(optimizers, model_dirpath="checkpoints/", train_models=True):
-    if train_models:
-        train_models(
+def compare_optimizers(
+    optimizers,
+    param_count=None,
+    model_dirpath="checkpoints/",
+    train_new=True,
+    seed=None,
+):
+    if train_new:
+        param_count = train_models(
             n_epochs=200,
             optimizers=optimizers,
             model_dirpath="checkpoints/",
             gpus=0,
-            seed=180224,
+            seed=seed,
         )
+        print(f"New models trained with {param_count} parameters.")
+    else:
+        assert param_count is not None, "Must enter # params when loading model."
 
-    u_gen = np.random.normal(size=303)
+    u_gen = np.random.normal(size=param_count)
     u = u_gen / np.linalg.norm(u_gen)
-    v_gen = np.random.normal(size=303)
+    v_gen = np.random.normal(size=param_count)
     v = v_gen / np.linalg.norm(v_gen)
 
     optim_paths_dict = get_optimizer_paths(
-        optimizers=optimizers, custom_directions=[u, v]
+        optimizers=optimizers, custom_directions=[u, v], seed=seed
     )
 
     plot_optimizers(
