@@ -1,4 +1,6 @@
 import pathlib
+import pickle
+import json
 
 import numpy as np
 import pytorch_lightning as pl
@@ -13,16 +15,14 @@ from loss_landscape_anim.plot import animate_paths, sample_frames
 def train_models(
     n_epochs,
     optimizers,
-    learning_rate=1e-2,
+    learning_rate,
     datamodule=None,
     model_dirpath="checkpoints/",
+    weight_init=None,
     gpus=0,
     seed=None,
 ):
     """Train the same neural net with different optimizers on the same data."""
-    if seed:
-        torch.manual_seed(seed)
-
     if not datamodule:
         datamodule = SpiralsDataModule()
 
@@ -31,13 +31,17 @@ def train_models(
     # Train models
     for i, optimizer in enumerate(optimizers):
         print(f"\nTraining MLP with {optimizer}\n")
+        if seed:
+            torch.manual_seed(seed)
+
         model = MLP(
             input_dim=datamodule.input_dim,
             num_classes=datamodule.num_classes,
             num_hidden_layers=1,
-            hidden_dim=100,
+            hidden_dim=20,
             learning_rate=learning_rate,
             optimizer=optimizer,
+            weight_init=weight_init,
             gpus=gpus,
         )
 
@@ -85,6 +89,7 @@ def get_optimizer_paths(
         # Sample from full path
         sampled_optim_path = sample_frames(model.optim_path, max_frames=300)
         optim_path = [path["flat_w"] for path in sampled_optim_path]
+        # optim_paths_dict[optimizer] = dim_reduction.reduce(optim_path)
         reduced_dict = dim_reduction.reduce(optim_path)
         optim_paths_dict[optimizer] = {}
         optim_paths_dict[optimizer]["path_2d"] = reduced_dict["path_2d"]
@@ -99,13 +104,15 @@ def plot_optimizers(
     model_dirpath="checkpoints/",
     datamodule=None,
 ):
+    # TODO: Experiment with different end points
+    N_OPTIM = 3
     if not datamodule:
         datamodule = SpiralsDataModule()
-    # TODO: Takes multiple paths, compute loss grid, draw contour and paths
+    # Takes multiple paths, compute loss grid, draw contour and paths
     # loss grid needs full-network param path for setting the center point,
-    optim_dict = optim_paths_dict[optimizers[0]]
+    optim_dict = optim_paths_dict[optimizers[N_OPTIM]]
     # needs model to compute loss grid
-    model_path = f"./{model_dirpath}/model_{optimizers[0]}_0.pt"
+    model_path = f"./{model_dirpath}/model_{optimizers[N_OPTIM]}_{N_OPTIM}.pt"
     model_file = pathlib.Path(model_path)
     if not model_file.is_file():
         raise Exception("Model file not found!")
@@ -113,7 +120,7 @@ def plot_optimizers(
 
     assert model.get_param_count() == custom_directions[0].shape[0]
     # path_2d is needed only to set margin for loss grid
-    path_2d = optim_paths_dict[optimizers[0]]["path_2d"]
+    path_2d = optim_paths_dict[optimizers[N_OPTIM]]["path_2d"]
     loss_grid = LossGrid(
         optim_path=optim_dict["optim_path"],
         model=model,
@@ -137,16 +144,21 @@ def plot_optimizers(
 
 def compare_optimizers(
     optimizers,
+    learning_rate,
     param_count=None,
     model_dirpath="checkpoints/",
     train_new=True,
     seed=None,
 ):
     if train_new:
+        weight_init = pickle.load(open("checkpoints/weight.p", "rb"))
+        print("\n Weight init loaded from disk.")
         param_count = train_models(
+            learning_rate=learning_rate,
             n_epochs=200,
             optimizers=optimizers,
             model_dirpath="checkpoints/",
+            weight_init=weight_init,
             gpus=0,
             seed=seed,
         )
@@ -154,18 +166,54 @@ def compare_optimizers(
     else:
         assert param_count is not None, "Must enter # params when loading model."
 
+    np.random.seed(seed)
     u_gen = np.random.normal(size=param_count)
     u = u_gen / np.linalg.norm(u_gen)
     v_gen = np.random.normal(size=param_count)
     v = v_gen / np.linalg.norm(v_gen)
-
     optim_paths_dict = get_optimizer_paths(
         optimizers=optimizers, custom_directions=[u, v], seed=seed
     )
 
+    # inspect_model(optimizers, optim_paths_dict)
+    # print("Model inspection done!")
     plot_optimizers(
         optimizers=optimizers,
         optim_paths_dict=optim_paths_dict,
         custom_directions=[u, v],
         model_dirpath=model_dirpath,
     )
+
+
+def save_weight_init(model_path="checkpoints/model_adam_0.pt"):
+    model = torch.load(model_path)
+    optim_path = [path["flat_w"] for path in model.optim_path]
+    weight_init = optim_path[0]
+    pickle.dump(weight_init, open("checkpoints/weight.p", "wb"))
+
+
+def inspect_model(optimizers, optim_paths_dict):
+    for i, optimizer in enumerate(optimizers):
+        model_path = f"checkpoints/model_{optimizer}_{i}.pt"
+        model = torch.load(model_path)
+        optim_path_converted = _convert_tensor_to_np(model.optim_path)
+        optim_path_json = []
+        for j, item in enumerate(optim_path_converted):
+            new_item = {}
+            new_item["path_2d"] = optim_paths_dict[optimizer]["path_2d"][j].tolist()
+            new_item["loss"] = item["loss"]
+            new_item["accuracy"] = item["accuracy"]
+            optim_path_json.append(new_item)
+        with open(f"checkpoints/model_{optimizer}_{i}.json", "w") as f:
+            json.dump(optim_path_json, f)
+
+
+def _convert_tensor_to_np(optim_path):
+    res = []
+    for item in optim_path:
+        res_item = {}
+        res_item["flat_w"] = item["flat_w"].numpy().tolist()
+        res_item["loss"] = item["loss"].numpy().tolist()
+        res_item["accuracy"] = item["accuracy"].numpy().tolist()
+        res.append(res_item)
+    return res

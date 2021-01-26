@@ -1,15 +1,28 @@
 import numpy as np
+import torch
+import pickle
 from loss_landscape_anim import (
     loss_landscape_anim,
     MNISTDataModule,
     LeNet,
     compare_optimizers,
 )
+from loss_landscape_anim.compare_optimizers import inspect_model
 
 
 if __name__ == "__main__":
     optimizers = ["adam", "sgd", "adagrad", "rmsprop"]
-    compare_optimizers(optimizers, param_count=603, train_new=False, seed=180224)
+    compare_optimizers(
+        optimizers,
+        learning_rate=1e-2,
+        train_new=True,
+        seed=180224,
+    )
+
+    # model = torch.load("checkpoints/model_adam_0.pt")
+    # optim_path = [path["flat_w"] for path in model.optim_path]
+    # weight_init = optim_path[0]
+    # pickle.dump(weight_init, open("checkpoints/weight.p", "wb"))
 
     # loss_landscape_anim(n_epochs=300)
 

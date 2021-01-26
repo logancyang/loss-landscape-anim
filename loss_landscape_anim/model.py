@@ -96,6 +96,7 @@ class MLP(GenericModel):
         hidden_dim=50,
         optimizer="adam",
         custom_optimizer=None,
+        weight_init=None,  # flattened weight for initialization
         gpus=0,
     ):
         super().__init__(
@@ -121,6 +122,10 @@ class MLP(GenericModel):
             self.layers.add_module(
                 name=f"{n_layers}", module=nn.Linear(hidden_dim, num_classes)
             )
+
+        if weight_init is not None:
+            # GenericModel can't use this directly because it doesn't have params
+            self.init_from_flat_params(weight_init)
 
     def forward(self, x_in, apply_softmax=False):
         """

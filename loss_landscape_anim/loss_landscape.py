@@ -9,7 +9,7 @@ from tqdm import tqdm
 RES = 50
 # Controls the margin from the optim starting point to the edge of the graph.
 # The value is a multiplier on the distance between the optim start and end
-MARGIN = 0.3
+MARGIN = 1
 
 
 class DimReduction:
@@ -80,7 +80,8 @@ class DimReduction:
         return self.project(optim_path_matrix, np.array([u, v]))
 
     def project(self, optim_path_matrix, reduced_dirs):
-        """Project optim_path_matrix onto (u, v)"""
+        """Project optim_path_matrix onto (u, v)."""
+        # (n_steps, n_dim) (n_dim, 2) -> (n_steps, 2)
         path_projection = optim_path_matrix.dot(reduced_dirs.T)
         assert path_projection.shape == (optim_path_matrix.shape[0], 2)
         return {
@@ -190,13 +191,6 @@ class LossGrid:
         print("\nLoss values generated.")
         return loss_2darray, argmin, loss_min
 
-    def _convert_coord(self, i, ref_point_coord, alpha):
-        """
-        Given a reference point coordinate (1D), find the value i steps away
-        with step size alpha
-        """
-        return i * alpha + ref_point_coord
-
     def convert_coords(self, res, alpha):
         """
         Convert the coordinates from (i, j) indices to (x, y) values with
@@ -239,6 +233,13 @@ class LossGrid:
         x = i * alpha + self.optim_point_2d[0]
         y = j * alpha + self.optim_point_2d[1]
         return x, y
+
+    def _convert_coord(self, i, ref_point_coord, alpha):
+        """
+        Given a reference point coordinate (1D), find the value i steps away
+        with step size alpha
+        """
+        return i * alpha + ref_point_coord
 
     def _compute_stepsize(self, res):
         dist_2d = self.path_2d[-1] - self.path_2d[0]
