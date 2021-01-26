@@ -69,7 +69,10 @@ The output of LeNet5 on the MNIST dataset looks like this:
 
 ## 2. Why PCA?
 
-The optimization path almost always fall into a low-dimensional space <sup>[[1]](#reference)</sup>. For visualizing the most movement, PCA is the best approach. However, it is not the best approach for all use cases. For instance, if you would like to compare the paths of different optimizers, PCA is not viable because its 2D slice depends on the path itself. The fact that different paths result in different 2D slices makes it impossible to plot them in the same space. In that case, 2 fixed directions are needed.
+The optimization path almost always fall into a low-dimensional space <sup>[[1]](#reference)</sup>. For visualizing the most movement, PCA is the best approach because it effectively finds the top directions the optimizer moved in.
+
+If you set 2 random directions, the optimizer's path may look like random walk.
+
 
 ## 3. Random and Custom Directions
 
@@ -125,6 +128,24 @@ loss_landscape_anim(
     output_to_file=True
 )
 ```
+
+## 5. Comparing Different Optimizers
+
+As mentioned in section 2, the optimization path usually falls into a very low-dimensional space, and its projection in other directions may look like random walk. As a result, it is difficult to pick 2 directions to compare different optimizers.
+
+In this example, I have `adam, sgd, adagrad, rmsprop` initialized with the same parameters. The figure below shows that when centering on the end of Adam's path, it looks like RMSprop is going to somewhere with larger loss value. That is an illusion. If you inspect the loss values of RMSprop, it actually finds another local optimum that has a lower loss than Adam. This is just showing **the projection of RMSprop's path** on this particular 2D slice of loss landscape, so **the contours cannot reflect the loss values of RMSprop's actual path**.
+
+Same 2 directions centering on Adam's path:
+
+<img src="./sample_images/adam_paths.gif" alt="adam" title="Fixed directions centering on Adam's path" align="middle"/>
+
+Same 2 directions centering on RMSprop's path:
+
+<img src="./sample_images/rmsprop_paths.gif" alt="rmsprop" title="Fixed directions centering on RMSprop's path" align="middle"/>
+
+This is a good reminder that the contours are just a 2D slice out of a very high-dimensional loss landscape, and the projections can't reflect the actual path.
+
+However, we can see that the contours are convex no matter where it centers around. It reflects that the optimizers shouldn't have a hard time finding a relatively good local minimum.
 
 ## Reference
 
