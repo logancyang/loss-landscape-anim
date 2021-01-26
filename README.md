@@ -145,7 +145,7 @@ Same 2 directions centering on RMSprop's path:
 
 This is a good reminder that the contours are just a 2D slice out of a very high-dimensional loss landscape, and the projections can't reflect the actual path.
 
-However, we can see that the contours are convex no matter where it centers around. It reflects that the optimizers shouldn't have a hard time finding a relatively good local minimum.
+However, we can see that the contours are convex (in this special case) no matter where it centers around. It reflects that the optimizers shouldn't have a hard time finding a relatively good local minimum.
 
 ## Reference
 
