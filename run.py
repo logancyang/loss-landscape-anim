@@ -1,3 +1,4 @@
+"""Example."""
 import numpy as np
 from loss_landscape_anim import loss_landscape_anim, MNISTDataModule, LeNet
 

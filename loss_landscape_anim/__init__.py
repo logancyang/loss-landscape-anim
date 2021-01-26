@@ -1,3 +1,4 @@
+"""Package init."""
 from .main import loss_landscape_anim
 from .model import GenericModel, MLP, LeNet
 from .loss_landscape import LossGrid

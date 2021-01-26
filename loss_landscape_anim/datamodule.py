@@ -1,3 +1,8 @@
+"""PyTorch Lightning datamodules.
+
+The dataset for the model to train on. To add your own, use the following as examples.
+"""
+# pylint: disable = no-member
 import os
 import pickle
 
@@ -10,7 +15,15 @@ from torchvision.datasets import MNIST
 
 
 class SpiralsDataModule(pl.LightningDataModule):
+    """Datamodule for the Spirals dataset."""
+
     def __init__(self, batch_size=None):
+        """Init a SpiralsDataModule object.
+
+        Args:
+            batch_size (optional): The batch size for training. Defaults to None meaning
+              a batch_size of 1.
+        """
         self.datadict = self._load_spirals_data()
         self.input_dim = self.datadict["X_train"].shape[1]
         self.num_classes = len(set(self.datadict["y_train"]))
@@ -25,13 +38,27 @@ class SpiralsDataModule(pl.LightningDataModule):
         return pickle.load(open(file, "rb"))
 
     def train_dataloader(self, num_workers=0):
+        """Return the train dataloader for PyTorch Lightning.
+
+        Args:
+            num_workers (optional): Defaults to 0.
+        """
         return DataLoader(
             self.dataset, batch_size=self.batch_size, num_workers=num_workers
         )
 
 
 class MNISTDataModule(pl.LightningDataModule):
+    """Datamodule for the MNIST dataset."""
+
     def __init__(self, batch_size, n_examples=3000):
+        """Init a MNIST datamodule.
+
+        Args:
+            batch_size: The batch size for training. Defaults to None meaning
+              a batch_size of 1.
+            n_examples (optional): The number of examples to train. Defaults to 3000.
+        """
         super().__init__()
         self.batch_size = batch_size if batch_size else 1
         self.num_classes = 10
@@ -55,6 +82,11 @@ class MNISTDataModule(pl.LightningDataModule):
         self.dataset = TensorDataset(self.X, self.y)
 
     def train_dataloader(self, num_workers=0):
+        """Return the train dataloader for PyTorch Lightning.
+
+        Args:
+            num_workers (optional): Defaults to 0.
+        """
         return DataLoader(
             self.dataset, batch_size=self.batch_size, num_workers=num_workers
         )

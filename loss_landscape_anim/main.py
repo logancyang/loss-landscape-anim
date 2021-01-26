@@ -1,24 +1,28 @@
-"""
-Steps:
+"""The main module with the loss_landscape_anim API.
+
+Conceptual steps to produce the animation:
 1. Load data
 2. Create a pytorch lightning model
 3. Record the parameters during training
-4. Use PCA to project the parameters to 2D
+4. Use PCA's top 2 PCs (or any 2 directions) to project the parameters to 2D
 5. Collect the values in 2D:
     a. A list of 2D values as the trajectory obtained by projecting the
-       parameters down to the 2D space spanned by the top 2 PC.
-    b. A grid of 2D values that capture (a) and some more for visual
-       aesthetics.
+       parameters down to the 2D space.
+    b. A 2D slice of the loss landscape (loss grid) that capture (a) with some
+       adjustments for visual aesthetics.
 """
 import pathlib
 
 import pytorch_lightning as pl
 import torch
 
-from loss_landscape_anim.datamodule import MNISTDataModule, SpiralsDataModule
+from loss_landscape_anim.datamodule import (
+    MNISTDataModule,
+    SpiralsDataModule,
+)
 from loss_landscape_anim.loss_landscape import LossGrid, DimReduction
 from loss_landscape_anim.model import MLP, LeNet
-from loss_landscape_anim.plot import animate_contour, sample_frames
+from loss_landscape_anim._plot import animate_contour, sample_frames
 
 
 def loss_landscape_anim(
@@ -40,6 +44,37 @@ def loss_landscape_anim(
     seed=None,
     return_data=False,
 ):
+    """
+    Create an optimization animation in the loss landscape.
+
+    Args:
+        n_epochs: Number of epochs to train.
+        datamodule: Optional; pytorch lightning data module. If None, default
+          to SpiralsDataModule.
+        model: Optional; The pytorch model of interest. If None, default to
+          a multi-layer perceptron (MLP) with 1 hidden layer and 50 neurons.
+        optimizer: Optional; The optimizer. Default to "adam".
+        reduction_method: Optional; Default to "pca". Can take "random" which means 2
+          random vectors sampled from a Gaussian, or "custom".
+        custom_directions: Optional; 2 custom directions to project to.
+          If "reduction_method" is "custom", this must be provided.
+        model_dirpath: Optional; Directory to save the model, default to "checkpoints/"
+        model_filename: Optional; Default to "model.pt"
+        gpus: Optional; The number of GPUs if available. Default to 0.
+        load_model: Optional; Whether to load from trained model. Default to False.
+        output_to_file: Optional; Whether to write the gif to file. Default to True.
+        output_filename: Optional; Default to "sample.gif"
+        giffps: Optional; Frames per second for the gif, default to 15.
+        sampling: Optional; Whether to uniformly sample from the training steps in case
+          there are too many steps. Default to False.
+        n_frames: Optional; Maximum number of frames in the animation. Default to 300.
+        seed: Optional; The seed for reproducible experiments.
+        return_data: Optional; Whether to return the training steps for inspection.
+          Default to False.
+    Returns:
+        Optional; 3 lists. The first is the full list of flatterned parameters during
+        training. The second and third are the corresponding loss and accuracy values.
+    """
     if seed:
         torch.manual_seed(seed)
 

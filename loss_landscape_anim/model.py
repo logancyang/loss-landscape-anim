@@ -1,12 +1,29 @@
+"""GenericModel class and its child classes.
+
+The GenericModel class enables flattening of the model parameters for tracking.
+MLP and LeNet are example models. Add your own PyTorch model by inheriting
+from GenericModel and organizing it into the pytorch lightning style.
+"""
+# pylint: disable = no-member
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 from torch import nn
-from torch.optim import SGD, Adam
+from torch.optim import SGD, Adam, Adagrad, RMSprop
 
 
 class GenericModel(pl.LightningModule):
+    """GenericModel class that enables flattening of the model parameters."""
+
     def __init__(self, optimizer, learning_rate, custom_optimizer=None, gpus=0):
+        """Init a new GenericModel.
+
+        Args:
+            optimizer: optimizer to use, such as "adam", "sgd", etc.
+            learning_rate: learning rate to use.
+            custom_optimizer (optional): Custom optimizer object. Defaults to None.
+            gpus (optional): GPUs to use for training. Defaults to 0.
+        """
         super().__init__()
         self.learning_rate = learning_rate
         self.optimizer = optimizer
@@ -16,21 +33,28 @@ class GenericModel(pl.LightningModule):
         self.accuracy = pl.metrics.Accuracy()
 
     def configure_optimizers(self):
+        """Configure the optimizer for Pytorch Lightning.
+
+        Raises:
+            Exception: Optimizer not recognized.
+        """
         if self.custom_optimizer:
             return self.custom_optimizer(self.parameters(), self.learning_rate)
         elif self.optimizer == "adam":
             return Adam(self.parameters(), self.learning_rate)
         elif self.optimizer == "sgd":
             return SGD(self.parameters(), self.learning_rate)
+        elif self.optimizer == "adagrad":
+            return Adagrad(self.parameters(), self.learning_rate)
+        elif self.optimizer == "rmsprop":
+            return RMSprop(self.parameters(), self.learning_rate)
         else:
             raise Exception(
-                f"custom_optimizer supplied is not supported, "
-                f"try torch.optim.Adam or torch.optim.SGD: "
-                f"{self.custom_optimizer}"
+                f"custom_optimizer supplied is not supported: {self.custom_optimizer}"
             )
 
     def get_flat_params(self):
-        """Get flattened and concatenated params of the model"""
+        """Get flattened and concatenated params of the model."""
         params = self._get_params()
         flat_params = torch.Tensor()
         if torch.cuda.is_available() and self.gpus > 0:
@@ -40,7 +64,7 @@ class GenericModel(pl.LightningModule):
         return flat_params
 
     def init_from_flat_params(self, flat_params):
-        """Set all model parameters from flattened and concat version"""
+        """Set all model parameters from the flattened form."""
         if not isinstance(flat_params, torch.Tensor):
             raise AttributeError(
                 "Argument to init_from_flat_params() must be torch.Tensor"
@@ -74,10 +98,9 @@ class GenericModel(pl.LightningModule):
 
 
 class MLP(GenericModel):
-    """
-    Multilayer Perceptron with specified number of hidden layers
-    with equal number of hidden dimensions in each layer. Default is
-    1 hidden layer with 50 neurons.
+    """A Multilayer Perceptron model.
+
+    Default is 1 hidden layer with 50 neurons.
     """
 
     def __init__(
@@ -89,13 +112,25 @@ class MLP(GenericModel):
         hidden_dim=50,
         optimizer="adam",
         custom_optimizer=None,
-        gpus=0
+        gpus=0,
     ):
+        """Init an MLP model.
+
+        Args:
+            input_dim: Number of input dimensions.
+            num_classes: Number of classes or output dimensions.
+            learning_rate: The learning rate to use.
+            num_hidden_layers (optional): Number of hidden layers. Defaults to 1.
+            hidden_dim (optional): Number of neurons in each layer. Defaults to 50.
+            optimizer (optional): The optimizer to use. Defaults to "adam".
+            custom_optimizer (optional): The custom optimizer to use. Defaults to None.
+            gpus (optional): GPUs to use if available. Defaults to 0.
+        """
         super().__init__(
             optimizer=optimizer,
             learning_rate=learning_rate,
             custom_optimizer=custom_optimizer,
-            gpus=gpus
+            gpus=gpus,
         )
         # NOTE: nn.ModuleList is not the same as Sequential,
         # the former doesn't have forward implemented
@@ -116,19 +151,22 @@ class MLP(GenericModel):
             )
 
     def forward(self, x_in, apply_softmax=False):
-        """
-        Pytorch lightning recommends using forward for inference,
-        not training
-        """
+        """Forward pass."""
+        # Pytorch lightning recommends using forward for inference, not training
         y_pred = self.layers(x_in)
         if apply_softmax:
             y_pred = F.softmax(y_pred, dim=1)
         return y_pred
 
     def loss_fn(self, y_pred, y):
+        """Loss function."""
         return F.cross_entropy(y_pred, y)
 
     def training_step(self, batch, batch_idx):
+        """Training step for a batch of data.
+
+        The model computes the loss and save it along with the flattened model params.
+        """
         X, y = batch
         y_pred = self(X)
         # Get model weights flattened here to append to optim_path later
@@ -152,16 +190,27 @@ class MLP(GenericModel):
         return {"loss": loss, "accuracy": accuracy, "flat_w": flat_w}
 
     def training_epoch_end(self, training_step_outputs):
+        """Only save the last step in each epoch.
+
+        Args:
+            training_step_outputs: all the steps in this epoch.
+        """
         # Only record the last step in each epoch
         self.optim_path.append(training_step_outputs[-1])
 
 
 class LeNet(GenericModel):
-    """
-    LeNet-5 convolutional neural network
-    """
+    """LeNet-5 convolutional neural network."""
 
     def __init__(self, learning_rate, optimizer="adam", custom_optimizer=None, gpus=0):
+        """Init a LeNet model.
+
+        Args:
+            learning_rate: learning rate to use.
+            optimizer (optional): optimizer to use. Defaults to "adam".
+            custom_optimizer (optional): custom optimizer to use. Defaults to None.
+            gpus (optional): Number of GPUs for training if available. Defaults to 0.
+        """
         super().__init__(optimizer, learning_rate, custom_optimizer, gpus=gpus)
         self.relu = nn.ReLU()
         self.pool = nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
@@ -190,6 +239,7 @@ class LeNet(GenericModel):
         self.fc2 = nn.Linear(84, 10)
 
     def forward(self, x):
+        """Forward pass."""
         x = self.relu(self.conv1(x))
         x = self.pool(x)
         x = self.relu(self.conv2(x))
@@ -201,9 +251,14 @@ class LeNet(GenericModel):
         return x
 
     def loss_fn(self, y_pred, y):
+        """Loss function."""
         return F.cross_entropy(y_pred, y)
 
     def training_step(self, batch, batch_idx):
+        """Training step for a batch of data.
+
+        The model computes the loss and save it along with the flattened model params.
+        """
         X, y = batch
         y_pred = self(X)
         # Get model weights flattened here to append to optim_path later
@@ -227,4 +282,9 @@ class LeNet(GenericModel):
         return {"loss": loss, "accuracy": accuracy, "flat_w": flat_w}
 
     def training_epoch_end(self, training_step_outputs):
+        """Only save the last step in each epoch.
+
+        Args:
+            training_step_outputs: all the steps in this epoch.
+        """
         self.optim_path.extend(training_step_outputs)
