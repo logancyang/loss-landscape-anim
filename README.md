@@ -69,14 +69,20 @@ The output of LeNet5 on the MNIST dataset looks like this:
 
 ## 2. Why PCA?
 
-The optimization path almost always fall into a low-dimensional space <sup>[[1]](#reference)</sup>. For visualizing the most movement, PCA is the best approach because it effectively finds the top directions the optimizer moved in.
+To create a 2D visualization, the first thing to do is to pick the 2 directions that define the plane. In the paper [Visualizing the Loss Landscape of Neural Nets](https://arxiv.org/abs/1712.09913v3), the authors argued why 2 random directions don't work and why PCA is much better. In summary,
 
-If you set 2 random directions, the optimizer's path may look like random walk.
+1) 2 random vectors in high dimensional space have a high probability of being orthogonal, and they can hardly capture any variation for the optimization path. The path’s projection onto the plane spanned by the 2 vectors will just look like random walk.
+
+2) If we pick one direction to be the vector pointing from the initial parameters to the final trained parameters, and another direction at random, the visualization will look like a straight line because the second direction doesn’t capture much variance compared to the first.
+
+3) If we use principal component analysis (PCA) on the optimization path and get the top 2 components, we can visualize the loss over the 2 orthogonal directions with the most variance.
+
+For showing *the most motion in 2D*, PCA is preferred. If you need a quick recap on PCA, here's a [minimal example](https://towardsdatascience.com/a-3-minute-review-of-pca-compression-and-recovery-38bb510a8637?sk=028aee2c8b0f3cf8b0207563a3ff907d) you can go over under 3 minutes.
 
 
 ## 3. Random and Custom Directions
 
-You can also set 2 fixed directions, either generated at random or handpicked.
+Although PCA is a good approach for picking the directions, if you need more control, the code also allows you to set any 2 fixed directions, either generated at random or handpicked.
 
 For 2 random directions, set `reduction_method` to `"random"`, e.g.
 
@@ -131,21 +137,23 @@ loss_landscape_anim(
 
 ## 5. Comparing Different Optimizers
 
-As mentioned in section 2, the optimization path usually falls into a very low-dimensional space, and its projection in other directions may look like random walk. As a result, it is difficult to pick 2 directions to compare different optimizers.
+As mentioned in section 2, the optimization path usually falls into a very low-dimensional space, and its projection in other directions may look like random walk. On the other hand, different optimizers can take very different paths in the high dimensional space. As a result, it is difficult to pick 2 directions to effectively compare different optimizers.
 
-In this example, I have `adam, sgd, adagrad, rmsprop` initialized with the same parameters. The figure below shows that when centering on the end of Adam's path, it looks like RMSprop is going to somewhere with larger loss value. That is an illusion. If you inspect the loss values of RMSprop, it actually finds another local optimum that has a lower loss than Adam. This is just showing **the projection of RMSprop's path** on this particular 2D slice of loss landscape, so **the contours cannot reflect the loss values of RMSprop's actual path**.
+In this example, I have `adam, sgd, adagrad, rmsprop` initialized with the same parameters. The two figures below share the same 2 random directions but are centered around different local minima. The first figure centers around the one Adam finds, the second centers around the one RMSprop finds. Essentially, the planes are 2 parallel slices of the loss landscape.
 
-Same 2 directions centering on Adam's path:
+The first figure shows that when centering on the end of Adam's path, it looks like RMSprop is going somewhere with larger loss value. But **that is an illusion**. If you inspect the loss values of RMSprop, it actually finds a local optimum that has a lower loss than Adam's.
+
+*Same 2 directions centering on Adam's path:*
 
 <img src="./sample_images/adam_paths.gif" alt="adam" title="Fixed directions centering on Adam's path" align="middle"/>
 
-Same 2 directions centering on RMSprop's path:
+*Same 2 directions centering on RMSprop's path:*
 
 <img src="./sample_images/rmsprop_paths.gif" alt="rmsprop" title="Fixed directions centering on RMSprop's path" align="middle"/>
 
-This is a good reminder that the contours are just a 2D slice out of a very high-dimensional loss landscape, and the projections can't reflect the actual path.
+**This is a good reminder that the contours are just a 2D slice out of a very high-dimensional loss landscape, and the projections can't reflect the actual path.**
 
-However, we can see that the contours are convex (in this special case) no matter where it centers around. It reflects that the optimizers shouldn't have a hard time finding a relatively good local minimum.
+However, we can see that the contours are convex no matter where it centers around in these 2 special cases. It more or less reflects that the optimizers shouldn't have a hard time finding a relatively good local minimum. To measure convexity more rigorously, the paper <sup>[[1]](#reference)</sup> mentioned a better method – using *principal curvature*, i.e. the eigenvalues of the Hessian. Check out the end of section 6 in the paper for more details.
 
 ## Reference
 
