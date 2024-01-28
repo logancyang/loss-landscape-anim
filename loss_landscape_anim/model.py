@@ -8,14 +8,17 @@ from GenericModel and organizing it into the pytorch lightning style.
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+import torchmetrics
 from torch import nn
-from torch.optim import SGD, Adam, Adagrad, RMSprop
+from torch.optim import SGD, Adagrad, Adam, RMSprop
 
 
 class GenericModel(pl.LightningModule):
     """GenericModel class that enables flattening of the model parameters."""
 
-    def __init__(self, optimizer, learning_rate, custom_optimizer=None, gpus=0):
+    def __init__(
+        self, optimizer, learning_rate, num_classes=10, custom_optimizer=None, gpus=0
+    ):
         """Init a new GenericModel.
 
         Args:
@@ -30,7 +33,10 @@ class GenericModel(pl.LightningModule):
         self.custom_optimizer = custom_optimizer
         self.gpus = gpus
         self.optim_path = []
-        self.accuracy = pl.metrics.Accuracy()
+        self.accuracy = torchmetrics.Accuracy(
+            task="multiclass", num_classes=num_classes
+        )
+        self.training_step_outputs = []
 
     def configure_optimizers(self):
         """Configure the optimizer for Pytorch Lightning.
@@ -187,16 +193,19 @@ class MLP(GenericModel):
             prog_bar=True,
             logger=True,
         )
+        self.training_step_outputs.append(
+            {"loss": loss, "accuracy": accuracy, "flat_w": flat_w}
+        )
         return {"loss": loss, "accuracy": accuracy, "flat_w": flat_w}
 
-    def training_epoch_end(self, training_step_outputs):
+    def on_train_epoch_end(self):
         """Only save the last step in each epoch.
 
         Args:
             training_step_outputs: all the steps in this epoch.
         """
         # Only record the last step in each epoch
-        self.optim_path.append(training_step_outputs[-1])
+        self.optim_path.append(self.training_step_outputs[-1])
 
 
 class LeNet(GenericModel):
@@ -279,12 +288,11 @@ class LeNet(GenericModel):
             prog_bar=True,
             logger=True,
         )
+        self.training_step_outputs.append(
+            {"loss": loss, "accuracy": accuracy, "flat_w": flat_w}
+        )
         return {"loss": loss, "accuracy": accuracy, "flat_w": flat_w}
 
-    def training_epoch_end(self, training_step_outputs):
-        """Only save the last step in each epoch.
-
-        Args:
-            training_step_outputs: all the steps in this epoch.
-        """
-        self.optim_path.extend(training_step_outputs)
+    def on_train_epoch_end(self):
+        """Saves all steps in each epoch."""
+        self.optim_path.append(self.training_step_outputs[-1])

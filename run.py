@@ -1,7 +1,7 @@
 """Example."""
 import numpy as np
-from loss_landscape_anim import loss_landscape_anim, MNISTDataModule, LeNet
 
+from loss_landscape_anim import LeNet, MNISTDataModule, loss_landscape_anim
 
 if __name__ == "__main__":
     loss_landscape_anim(n_epochs=300)
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     bs = 16
     lr = 1e-3
     datamodule = MNISTDataModule(batch_size=bs, n_examples=3000)
-    model = LeNet(learning_rate=lr)
+    model = LeNet(learning_rate=lr, num_classes=10) # num_classes = 10 for MNIST, required for Accuracy metric
 
     loss_landscape_anim(
         n_epochs=10,

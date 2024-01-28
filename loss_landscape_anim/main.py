@@ -16,13 +16,10 @@ import pathlib
 import pytorch_lightning as pl
 import torch
 
-from loss_landscape_anim.datamodule import (
-    MNISTDataModule,
-    SpiralsDataModule,
-)
-from loss_landscape_anim.loss_landscape import LossGrid, DimReduction
-from loss_landscape_anim.model import MLP, LeNet
 from loss_landscape_anim._plot import animate_contour, sample_frames
+from loss_landscape_anim.datamodule import MNISTDataModule, SpiralsDataModule
+from loss_landscape_anim.loss_landscape import DimReduction, LossGrid
+from loss_landscape_anim.model import MLP, LeNet
 
 
 def loss_landscape_anim(
@@ -108,9 +105,7 @@ def loss_landscape_anim(
     if not load_model:
         model.gpus = gpus
         train_loader = datamodule.train_dataloader()
-        trainer = pl.Trainer(
-            progress_bar_refresh_rate=5, max_epochs=n_epochs, gpus=gpus
-        )
+        trainer = pl.Trainer(enable_progress_bar=True, max_epochs=n_epochs)
         print(f"Training for {n_epochs} epochs...")
         trainer.fit(model, train_loader)
         torch.save(model, file_path)
