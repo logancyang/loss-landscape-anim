@@ -37,14 +37,17 @@ class SpiralsDataModule(pl.LightningDataModule):
         file = resources / "spirals.p"
         return pickle.load(open(file, "rb"))
 
-    def train_dataloader(self, num_workers=0):
+    def train_dataloader(self, num_workers=7):
         """Return the train dataloader for PyTorch Lightning.
 
         Args:
             num_workers (optional): Defaults to 0.
         """
         return DataLoader(
-            self.dataset, batch_size=self.batch_size, num_workers=num_workers
+            self.dataset,
+            batch_size=self.batch_size,
+            num_workers=num_workers,
+            persistent_workers=True,
         )
 
 
@@ -81,14 +84,17 @@ class MNISTDataModule(pl.LightningDataModule):
         self.X, self.y = self._extract_features_targets(subset)
         self.dataset = TensorDataset(self.X, self.y)
 
-    def train_dataloader(self, num_workers=0):
+    def train_dataloader(self, num_workers=7):
         """Return the train dataloader for PyTorch Lightning.
 
         Args:
             num_workers (optional): Defaults to 0.
         """
         return DataLoader(
-            self.dataset, batch_size=self.batch_size, num_workers=num_workers
+            self.dataset,
+            batch_size=self.batch_size,
+            num_workers=num_workers,
+            persistent_workers=True,
         )
 
     def _extract_features_targets(self, subset):

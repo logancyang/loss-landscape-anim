@@ -16,14 +16,14 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-numpy = "^1.19.4"
-torch = "^1.7.1"
-matplotlib = "^3.3.3"
-pytorch-lightning = "^1.1.2"
-sklearn = "^0.0"
-torchvision = "^0.8.2"
-importlib_resources = "^5.0.0"
-tqdm = "^4.56.0"
+numpy = "^1.26.3"
+torch = "^2.1.2"
+matplotlib = "^3.8.2"
+pytorch-lightning = "^2.1.3"
+sickit_learn = "^1.4.0"
+torchvision = "^0.16.2"
+importlib_resources = "^6.1.1"
+tqdm = "^4.66.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
@@ -37,5 +37,5 @@ pylint = "^2.6.0"
 pydocstyle = "^5.1.1"
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.7"]
 build-backend = "poetry.masonry.api"
