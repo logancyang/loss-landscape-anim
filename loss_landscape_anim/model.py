@@ -17,7 +17,7 @@ class GenericModel(pl.LightningModule):
     """GenericModel class that enables flattening of the model parameters."""
 
     def __init__(
-        self, optimizer, learning_rate, num_classes=10, custom_optimizer=None, gpus=0
+        self, optimizer, learning_rate, custom_optimizer=None, gpus=0, num_classes=10
     ):
         """Init a new GenericModel.
 
@@ -137,6 +137,7 @@ class MLP(GenericModel):
             learning_rate=learning_rate,
             custom_optimizer=custom_optimizer,
             gpus=gpus,
+            num_classes=num_classes,
         )
         # NOTE: nn.ModuleList is not the same as Sequential,
         # the former doesn't have forward implemented
@@ -211,7 +212,14 @@ class MLP(GenericModel):
 class LeNet(GenericModel):
     """LeNet-5 convolutional neural network."""
 
-    def __init__(self, learning_rate, optimizer="adam", custom_optimizer=None, gpus=0):
+    def __init__(
+        self,
+        learning_rate,
+        num_classes,
+        optimizer="adam",
+        custom_optimizer=None,
+        gpus=0,
+    ):
         """Init a LeNet model.
 
         Args:
@@ -220,7 +228,13 @@ class LeNet(GenericModel):
             custom_optimizer (optional): custom optimizer to use. Defaults to None.
             gpus (optional): Number of GPUs for training if available. Defaults to 0.
         """
-        super().__init__(optimizer, learning_rate, custom_optimizer, gpus=gpus)
+        super().__init__(
+            optimizer,
+            learning_rate,
+            custom_optimizer,
+            gpus=gpus,
+            num_classes=num_classes,
+        )
         self.relu = nn.ReLU()
         self.pool = nn.AvgPool2d(kernel_size=(2, 2), stride=(2, 2))
         self.conv1 = nn.Conv2d(
