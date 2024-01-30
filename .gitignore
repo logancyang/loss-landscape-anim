@@ -28,6 +28,7 @@ pip-log.txt
 venv
 *.pyc
 build
+.python-version
 
 # IDE
 .vscode

@@ -1,10 +1,10 @@
 """Package init."""
-from .main import loss_landscape_anim
-from .model import GenericModel, MLP, LeNet
+from .datamodule import MNISTDataModule, SpiralsDataModule
 from .loss_landscape import LossGrid
-from .datamodule import SpiralsDataModule, MNISTDataModule
+from .main import loss_landscape_anim
+from .model import MLP, GenericModel, LeNet
 
-__version__ = "0.1.9"
+__version__ = "0.1.10"
 
 __all__ = [
     "loss_landscape_anim",
